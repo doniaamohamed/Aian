@@ -758,6 +758,7 @@ function KnowledgeGraph() {
   if (!mounted) {
     return null;
   }
+
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[color:var(--color-surface)]/60 p-3">
       <div className="absolute inset-0 grid-bg opacity-30" />

@@ -1,8 +1,12 @@
 // Auth API Endpoints placeholder
 import api from "../axios";
 
+type Credentials = { email: string; password: string };
+  type AuthResponse = { token: string; user: any };
+
 export const authApi = {
-  login: async (credentials: any) => {
+
+  login: async (credentials: Credentials): Promise<AuthResponse> => {
     const response = await api.post("/auth/login", credentials);
     return response.data;
   },
