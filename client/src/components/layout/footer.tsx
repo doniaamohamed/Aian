@@ -4,7 +4,7 @@ import { AianLogo } from "@/components/features/landing/Logo";
 
 export function Footer() {
   return (
-    <footer className="border-t border-white/5 py-14 bg-background">
+    <footer className="border-t border-primary/30 py-14 bg-background">
       <div className="mx-auto max-w-6xl px-4">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-2">

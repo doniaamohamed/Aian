@@ -39,69 +39,8 @@ import {
 } from "lucide-react";
 import { AianMark, AianLogo } from "./Logo";
 import { NeuralBackdrop } from "./NeuralBackdrop";
+import { useTheme } from "next-themes";
 
-/* ---------------- Nav ---------------- */
-
-export function Nav() {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 12);
-    on();
-    window.addEventListener("scroll", on, { passive: true });
-    return () => window.removeEventListener("scroll", on);
-  }, []);
-  const items = [
-    ["Platform", "#pipeline"],
-    ["Agents", "#agents"],
-    ["Memory", "#memory"],
-    ["Reports", "#reports"],
-    ["Pricing", "#pricing"],
-  ] as const;
-  return (
-    <header
-      className={
-        "fixed inset-x-0 top-0 z-50 transition-all duration-500 " +
-        (scrolled ? "py-2" : "py-4")
-      }
-    >
-      <div className="mx-auto max-w-6xl px-4">
-        <nav
-          className={
-            "flex items-center justify-between rounded-full px-4 py-2.5 transition-all duration-500 " +
-            (scrolled ? "glass-strong" : "border border-transparent")
-          }
-        >
-          <AianLogo />
-          <div className="hidden items-center gap-1 md:flex">
-            {items.map(([label, href]) => (
-              <a
-                key={label}
-                href={href}
-                className="rounded-full px-3.5 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {label}
-              </a>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <a
-              href="#cta"
-              className="hidden rounded-full px-3.5 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
-            >
-              Sign in
-            </a>
-            <a
-              href="#cta"
-              className="btn-gold btn-gold-hover inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium"
-            >
-              Start Free <ArrowRight className="h-3.5 w-3.5" />
-            </a>
-          </div>
-        </nav>
-      </div>
-    </header>
-  );
-}
 
 /* ---------------- Section shell ---------------- */
 
@@ -649,7 +588,7 @@ export function Pipeline() {
                 <div className="absolute right-4 top-4 font-display text-xs tabular-nums text-muted-foreground/60">
                   0{i + 1}
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] ring-1 ring-inset ring-white/10">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[color:var(--color-gold-soft)]/20 to-transparent ring-1 ring-inset ring-white/10">
                   <s.Icon className="h-5 w-5 text-[color:var(--color-gold-soft)]" />
                 </div>
                 <div className="mt-4 font-display text-lg font-medium">{s.t}</div>
@@ -809,6 +748,7 @@ function KnowledgeGraph() {
     ["doc", "decision"],
   ];
   const map = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  const theme = useTheme();
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[color:var(--color-surface)]/60 p-3">
       <div className="absolute inset-0 grid-bg opacity-30" />
@@ -840,7 +780,7 @@ function KnowledgeGraph() {
               cx={n.x}
               cy={n.y}
               r={n.r}
-              fill={n.gold ? "url(#core-g)" : "rgba(255,255,255,0.06)"}
+              fill={n.gold ?  "url(#core-g)" :  theme.resolvedTheme !== 'dark' ? "rgba(206, 127, 24, 0.06)" : "hsla(170, 65%, 49%, 0.06)"}
               stroke={n.gold ? "#E8C86A" : "rgba(255,255,255,0.15)"}
               strokeWidth={n.gold ? 1.5 : 0.75}
               initial={{ scale: 0, opacity: 0 }}
@@ -854,7 +794,7 @@ function KnowledgeGraph() {
               y={n.y + n.r + 12}
               textAnchor="middle"
               fontSize="9"
-              fill="rgba(245,247,250,0.7)"
+              fill={theme.resolvedTheme !== 'dark' ? "rgba(0, 0, 0, 0.7)" : "rgba(245,247,250,0.7)"}
               fontFamily="Inter"
             >
               {n.label}
@@ -1173,8 +1113,8 @@ export function WhyAian() {
         <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((it, i) => (
             <Reveal key={it.t} delay={i * 0.03}>
-              <div className="flex h-full items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition-colors hover:bg-white/[0.04]">
-                <div className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-inset ring-white/10">
+              <div className="flex h-full items-start gap-3 rounded-2xl border border-white/8 bg-[color:var(--color-surface)]/70 p-5 transition-all hover:-translate-y-0.5 hover:border-white/15">
+                <div className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-[color:var(--color-gold-soft)]/20 to-transparent ring-1 ring-inset ring-white/10 ">
                   <it.Icon className="h-4.5 w-4.5 text-[color:var(--color-gold-soft)]" />
                 </div>
                 <div>
@@ -1225,7 +1165,7 @@ export function Architecture() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.06, duration: 0.6 }}
-                  className="group relative flex items-center gap-4 rounded-2xl border border-white/8 bg-white/[0.02] px-5 py-4 transition-all hover:border-[color:var(--color-gold-soft)]/25"
+                  className="group relative flex items-center gap-4 rounded-2xl border border-white/8 bg-background  px-5 py-4 transition-all hover:border-[color:var(--color-gold-soft)]/25"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-inset ring-white/10">
                     <l.Icon className="h-5 w-5 text-[color:var(--color-gold-soft)]" />
@@ -1279,7 +1219,7 @@ export function FeatureGrid() {
         <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {feats.map((f, i) => (
             <Reveal key={f.t} delay={i * 0.02}>
-              <div className="group h-full rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition-colors hover:bg-white/[0.04]">
+              <div className="group h-full rounded-2xl border border-white/10 bg-[color:var(--color-surface)]/70 p-5 transition-colors hover:bg-white/[0.04]">
                 <f.Icon className="h-5 w-5 text-[color:var(--color-gold-soft)]" />
                 <div className="mt-3 font-display text-sm font-medium">{f.t}</div>
                 <div className="mt-1 text-xs text-muted-foreground">{f.d}</div>
@@ -1488,65 +1428,7 @@ export function FinalCTA() {
   );
 }
 
-/* ---------------- Footer ---------------- */
 
-export function Footer() {
-  return (
-    <footer className="border-t border-white/5 py-14">
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="grid gap-10 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <AianLogo />
-            <p className="mt-4 max-w-sm text-sm text-muted-foreground">
-              The enterprise organizational intelligence platform. One brain for every meeting,
-              message, doc, ticket and repo.
-            </p>
-          </div>
-          {[
-            {
-              t: "Product",
-              i: ["Platform", "Agents", "Reports", "Pricing"],
-            },
-            {
-              t: "Company",
-              i: ["About", "Security", "Contact", "Careers"],
-            },
-          ].map((col) => (
-            <div key={col.t}>
-              <div className="text-xs uppercase tracking-widest text-muted-foreground">{col.t}</div>
-              <ul className="mt-4 space-y-2 text-sm">
-                {col.i.map((x) => (
-                  <li key={x}>
-                    <a
-                      href="#"
-                      className="text-foreground/80 transition-colors hover:text-foreground"
-                    >
-                      {x}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-white/5 pt-6 text-xs text-muted-foreground">
-          <div>© {new Date().getFullYear()} AIAN. All rights reserved.</div>
-          <div className="flex items-center gap-4">
-            <a href="#" className="hover:text-foreground">
-              Privacy
-            </a>
-            <a href="#" className="hover:text-foreground">
-              Terms
-            </a>
-            <a href="#" className="hover:text-foreground">
-              Security
-            </a>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 /* dummy to silence unused useSpring if not needed later */
 export const _unused = { useSpring };
