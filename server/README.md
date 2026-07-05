@@ -1,98 +1,140 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Aian Backend Server
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This is the central backend API for the Aian platform, built with [NestJS](https://nestjs.com/) and [Prisma ORM](https://www.prisma.io/).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Getting Started (For New Developers)
 
-## Description
+When you first clone this repository, you are starting with a completely empty database. You must follow these exact steps to set up the project locally:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+1. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-## Project setup
+2. **Start the Database Container**
+   Ensure Docker is running on your machine, then spin up the PostgreSQL database:
+   ```bash
+   docker-compose up -d
+   ```
 
-```bash
-$ npm install
+3. **Set up Environment Variables**
+   Duplicate the example environment file and configure any missing credentials:
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Run Database Migrations (CRITICAL)**
+   This pushes the SQL table definitions from `schema.prisma` into your empty PostgreSQL database:
+   ```bash
+   npm run db:migrate
+   ```
+
+5. **Seed the Database**
+   Populate the database with initial required data (e.g., initial organizations, eye types):
+   ```bash
+   npm run db:seed
+   ```
+
+6. **Start the Development Server**
+   ```bash
+   npm run start:dev
+   ```
+
+---
+
+## 🛠️ Prisma Database Commands
+
+We have added convenient shortcuts in `package.json` to manage the database easily:
+
+- **`npm run db:migrate`**: Applies pending migrations to the database and regenerates the Prisma Client. Run this after pulling new changes that modify the schema.
+- **`npm run db:generate`**: Only generates the Prisma Client (TypeScript types). Useful if the client goes out of sync.
+- **`npm run db:seed`**: Runs `prisma/seed.ts` to populate the DB with initial data.
+- **`npm run db:studio`**: Opens a visual database editor in your browser at `localhost:5555`.
+- **`npm run db:reset`**: **WARNING**: Drops all tables, reapplies all migrations, and runs the seed script again. Great for cleaning your local environment.
+
+---
+
+## 🌍 Global Services Documentation
+
+This server includes highly modular global services that can be used across any feature module.
+
+### 1. File Upload Service (`UploadService`)
+
+A robust, SOLID-compliant service for handling file uploads (currently saving locally to `/uploads`).
+
+**How to use:**
+1. Import `UploadModule` into your feature module.
+2. Inject `UploadService` into your controller/service.
+3. Call `await this.uploadService.uploadFile(...)`.
+
+**Example:**
+```typescript
+import { Controller, Post, UseInterceptors, UploadedFile, Body } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UploadService, UploadCategory } from '../upload/upload.service';
+
+@Controller('users')
+export class UsersController {
+  constructor(private readonly uploadService: UploadService) {}
+
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('file')) // Expects 'file' in multipart/form-data
+  async uploadAvatar(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('userId') userId: string,
+  ) {
+    // uploadFile(file, category)
+    // Accepted categories: 'images' | 'documents' | 'videos' | 'audio' | 'misc'
+    const publicUrl = await this.uploadService.uploadFile(file, 'images');
+    
+    // Save publicUrl to the database...
+    return { url: publicUrl };
+  }
+}
 ```
+**Details:**
+- Files are automatically validated against their MIME types (e.g., `images` only accepts `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`).
+- Files are renamed using a secure UUID to prevent overwriting.
+- They are accessible publicly via `http://localhost:1234/uploads/<category>/<filename>`.
 
-## Compile and run the project
+### 2. Email Service (`EmailService`)
 
-```bash
-# development
-$ npm run start
+A centralized service for sending branded emails. All emails sent through this service are automatically wrapped in the standard Aian Gold and Black HTML template (with header, footer, and support links).
 
-# watch mode
-$ npm run start:dev
+**How to use:**
+1. Import `EmailModule` into your feature module.
+2. Inject `EmailService` into your controller/service.
+3. Call `await this.emailService.sendBrandedEmail(...)`.
 
-# production mode
-$ npm run start:prod
+**Example:**
+```typescript
+import { Injectable } from '@nestjs/common';
+import { EmailService } from '../email/email.service';
+
+@Injectable()
+export class AuthService {
+  constructor(private readonly emailService: EmailService) {}
+
+  async sendWelcomeEmail(userEmail: string, userName: string) {
+    // 1. Create your raw custom content
+    const customMessage = `
+      <h2>Welcome to Aian, ${userName}!</h2>
+      <p>We are thrilled to have you onboard.</p>
+      <a href="http://localhost:3000/login" class="btn">Login Now</a>
+    `;
+
+    // 2. Pass it to the service
+    // The service will wrap your HTML in the Aian Base Layout.
+    // NOTE: You can remove 'await' if you want it to send asynchronously in the background.
+    await this.emailService.sendBrandedEmail(
+      userEmail,             // Recipient (to)
+      'Welcome to Aian!',    // Subject
+      customMessage          // Body (HTML)
+    );
+  }
+}
 ```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**Details:**
+- **`sendBrandedEmail(to, subject, html)`**: Wraps the provided HTML in the Aian company template.
+- **`sendRawEmail(to, subject, html)`**: Bypasses the wrapper for completely custom emails.
+- Depends on the `SMTP_*` variables in your `.env` file.
