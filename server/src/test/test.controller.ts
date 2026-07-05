@@ -7,13 +7,13 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadService, UploadCategory } from './upload.service';
+import { UploadService, UploadCategory } from '../upload/upload.service';
 
-@Controller('upload-test')
-export class UploadController {
+@Controller('test')
+export class TestController {
   constructor(private readonly uploadService: UploadService) {}
 
-  @Post()
+  @Post('upload')
   @UseInterceptors(FileInterceptor('file')) // Automatically extracts multipart/form-data field named 'file'
   async testUpload(
     @UploadedFile() file: Express.Multer.File,
