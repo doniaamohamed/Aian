@@ -749,6 +749,15 @@ function KnowledgeGraph() {
   ];
   const map = Object.fromEntries(nodes.map((n) => [n.id, n]));
   const theme = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[color:var(--color-surface)]/60 p-3">
       <div className="absolute inset-0 grid-bg opacity-30" />
@@ -780,7 +789,7 @@ function KnowledgeGraph() {
               cx={n.x}
               cy={n.y}
               r={n.r}
-              fill={n.gold ?  "url(#core-g)" :  theme.resolvedTheme !== 'dark' ? "rgba(206, 127, 24, 0.06)" : "hsla(170, 65%, 49%, 0.06)"}
+              fill={n.gold ? "url(#core-g)" : theme.resolvedTheme !== 'dark' ? "rgba(206, 127, 24, 0.06)" : "hsla(170, 65%, 49%, 0.06)"}
               stroke={n.gold ? "#E8C86A" : "rgba(255,255,255,0.15)"}
               strokeWidth={n.gold ? 1.5 : 0.75}
               initial={{ scale: 0, opacity: 0 }}
@@ -1374,7 +1383,7 @@ export function Pricing() {
                     "mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all " +
                     (p.highlight
                       ? "btn-gold btn-gold-hover"
-                      : "border border-white/10 bg-white/[0.03] text-foreground hover:bg-white/[0.06]")
+                      : "border border-primary/30 bg-white/[0.03] text-foreground hover:bg-white/[0.06]")
                   }
                 >
                   {p.cta} <ArrowRight className="h-3.5 w-3.5" />
@@ -1417,7 +1426,7 @@ export function FinalCTA() {
             </a>
             <a
               href="#"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.06]"
+              className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-white/[0.03] px-5 py-3 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.06]"
             >
               Book Demo
             </a>
