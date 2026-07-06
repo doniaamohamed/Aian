@@ -6,7 +6,7 @@ import { HealthModule } from './health/health.module';
 import { UploadModule } from './upload/upload.module';
 import { TestModule } from './test/test.module';
 import { EmailModule } from './email/email.module';
-
+import { UsersModule } from './users/users.module'
 @Module({
   imports: [
     // Serve files stored in the /uploads directory at the /uploads HTTP route
@@ -19,6 +19,7 @@ import { EmailModule } from './email/email.module';
     UploadModule,
     EmailModule,
     TestModule,
+    UsersModule
   ],
 })
 export class AppModule {}
