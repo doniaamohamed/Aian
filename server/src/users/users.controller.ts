@@ -1,8 +1,11 @@
-import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Query, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, ClassSerializerInterceptor, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Patch, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
 import { CreateUserDto } from './dto/createUser.dto';
 import { UsersService } from './users.service';
 import { UpdateUserDTO } from './dto/updateUser.dto';
 import { UserEntity } from './user.entity';
+import { AuthGaurd } from '../auth/auth.gaurd';
+import { CurrentUser } from '../decorators/current-user.decorator';
+import { User } from '@prisma/client';
 
 @Controller('users')
 export class UsersController {
@@ -21,7 +24,9 @@ export class UsersController {
     }
 
     @Get()
-    async findAllOrOneByEmail(@Query('email') email:string){
+    @UseGuards(AuthGaurd)
+    async findAllOrOneByEmail(@Query('email') email:string,@CurrentUser()user:any){
+        console.log(user)
         if(email){
                 try{
                 const user= await this.usersService.findOneByEmail(email);
