@@ -4,7 +4,6 @@ import { UsersService } from './users.service';
 import { UpdateUserDTO } from './dto/updateUser.dto';
 import { UserEntity } from './user.entity';
 
-@UseInterceptors(ClassSerializerInterceptor)
 @Controller('users')
 export class UsersController {
     constructor(
@@ -15,10 +14,7 @@ export class UsersController {
     async findOne(@Param('id') id:string){
         try{
             const user= await this.usersService.findOneById(id);
-            return {
-                success:true,
-                data:{user:new UserEntity(user)}
-            };
+            return {user:new UserEntity(user)};
         }catch(error:any){
             this.handleException(error);
         }
@@ -29,18 +25,13 @@ export class UsersController {
         if(email){
                 try{
                 const user= await this.usersService.findOneByEmail(email);
-                return {
-                    success:true,
-                    data:{user:new UserEntity(user)}
-                };
+                return {user:new UserEntity(user)};
             }catch(error:any){
                 this.handleException(error);
             }
         }else{
             const users= await this.usersService.findAll();
-            return {
-                success:true,
-                data:{users:users.map(user => new UserEntity(user))}};
+            return {users:users.map(user => new UserEntity(user))}
         }
     }
     
@@ -48,10 +39,7 @@ export class UsersController {
     async updateUser(@Param('id') id:string,@Body() body:UpdateUserDTO){
         try{
             const user= await this.usersService.updateUser(id,body);
-            return {
-                success:true,
-                data:{user:new UserEntity(user)}
-            };
+            return {user:new UserEntity(user)};
         }catch(error:any){
             this.handleException(error);
         }

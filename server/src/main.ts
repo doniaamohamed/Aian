@@ -1,8 +1,9 @@
 import 'dotenv/config';
 
-import { NestFactory } from '@nestjs/core';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ClassSerializerInterceptor, Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { TransformInterceptor } from './interceptors/transform.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,6 +16,12 @@ async function bootstrap() {
       forbidNonWhitelisted: true, // Throws an error if unknown properties are sent
       transform: true, // Automatically transforms payloads to be objects typed according to their DTO classes
     }),
+    
+  );
+
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector)),
+    new TransformInterceptor(),
   );
 
   app.setGlobalPrefix('api/v1');
