@@ -29,7 +29,6 @@ export class UsersController {
     }
 
     @Get()
-    @RequiredPermissions('dashboard.read','providers.read')
     async findAllOrOneByEmail(@Query('email') email:string,@CurrentUser()user:any){
         console.log(user)
         if(email){

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { Permission, Role, User } from '@prisma/client';
 import { error } from 'console';
+import { UserEntity } from '../users/user.entity';
 
 @Injectable()
 export class RolesPermissionsService {
@@ -12,7 +13,16 @@ export class RolesPermissionsService {
     ){}
 
     async getRoleById(id:string){
-        const role= await this.prismaService.role.findUnique({where:{id}});
+        const role= await this.prismaService.role.findUnique({
+            where:{id},
+            include:{
+                permissions:{
+                    include:{
+                        permission:true
+                    }
+                }
+            }
+        });
         if(!role){
             throw new NotFoundException("role not found")
         }
@@ -34,12 +44,22 @@ export class RolesPermissionsService {
                     { organizationId: id },
                     { isSystemRole: true }
                 ]
+            },
+            include:{
+                users:{
+                    where:{organizationId:id},
+                    select:{
+                        id:true,
+                        fullName:true,
+                        email:true,
+                    }
+                }
             }
         });
         return roles;
     }
 
-    async assignRoleToUser(roleId:string,currentUser:Partial<User>,employeeUserId:string){
+    async assignRoleToUser(roleId:string,currentUser:Partial<User>&{role?:string},employeeUserId:string){
         const employee = await this.usersServices.findOneById(employeeUserId);
         if(currentUser.organizationId!==employee.organizationId){
             throw new ForbiddenException("this employee doesn't belong to your organization")
@@ -48,6 +68,10 @@ export class RolesPermissionsService {
         const role=await this.getRoleById(roleId);
         if(!role.isSystemRole && role.organizationId !== currentUser.organizationId){
             throw new ForbiddenException("this role doesn't belong to your organization")
+        }
+        
+        if((role.name=='Admin' || role.name=='Owner') && currentUser.role!=="Owner"){
+            throw new BadRequestException('Only Owner of the organization can assign role admin or owner to users')
         }
         
         const user= await this.usersServices.updateUser(employeeUserId,{roleId})
@@ -118,6 +142,32 @@ export class RolesPermissionsService {
             }
 
             return updatedRole;
+        });
+    }
+
+    async deleteCustomRole(roleId: string, currentUserOrgId: string) {
+        const role = await this.getRoleById(roleId);
+
+        if (role.isSystemRole || role.organizationId !== currentUserOrgId) {
+            throw new ForbiddenException("This role doesn't belong to your organization or cannot be deleted");
+        }
+
+        const assignedUsersCount = await this.prismaService.user.count({
+            where: { roleId: roleId }
+        });
+
+        if (assignedUsersCount > 0) {
+            throw new BadRequestException("Cannot delete this role because it is currently assigned to one or more users");
+        }
+
+        return await this.prismaService.$transaction(async (tx) => {
+            await tx.rolePermission.deleteMany({
+                where: { roleId: roleId }
+            });
+
+            return await tx.role.delete({
+                where: { id: roleId }
+            });
         });
     }
 }
