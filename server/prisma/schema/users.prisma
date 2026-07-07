@@ -9,13 +9,13 @@ model User {
   createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz
   updatedAt        DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  organizationId   String      @map("organization_id")
-  organization     Organization @relation("OrgUsers", fields: [organizationId], references: [id])
+  organizationId   String?      @map("organization_id")
+  organization     Organization? @relation("OrgUsers", fields: [organizationId], references: [id])
   
-  roleId           String      @map("role_id")
-  role             Role        @relation(fields: [roleId], references: [id])
+  roleId           String?      @map("role_id")
+  role             Role?        @relation(fields: [roleId], references: [id])
 
-  memberStatus     MembershipStatus @default(invited) @map("member_status")
+  memberStatus     MembershipStatus? @default(invited) @map("member_status")
   joinedAt         DateTime?   @map("joined_at") @db.Timestamptz
   
   invitedByUserId  String?     @map("invited_by_user_id")
