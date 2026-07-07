@@ -10,6 +10,7 @@ import { UsersModule } from './users/users.module'
 import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { RolesPermissionsModule } from './roles_permissions/roles_permissions.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     TestModule,
     UsersModule,
     AuthModule,
-    DashboardModule
+    DashboardModule,
+    RolesPermissionsModule
   ],
 })
 export class AppModule {}
