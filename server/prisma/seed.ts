@@ -75,6 +75,7 @@ async function main() {
     'members.read',
     'members.invite',
     'members.update_role',
+    'members.update_status',
     'members.remove',
     'roles.read',
     'roles.create',
