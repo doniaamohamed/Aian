@@ -54,7 +54,7 @@ export default function LoginPage() {
       footer={
         <>
           New to AIAN?{" "}
-          <Link href="/auth/register" className="font-medium text-foreground hover:text-[color:var(--gold-soft)]">
+          <Link href="/register" className="font-medium text-foreground hover:text-[color:var(--gold-soft)]">
             Create an account
           </Link>
         </>
