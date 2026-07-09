@@ -16,6 +16,7 @@ import { RolesPermissionsModule } from './roles_permissions/roles_permissions.mo
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { IngestionModule } from './ingestion/ingestion.module';
 import { IntegrationsModule } from './integrations/integrations.module';
+import { CollectionModule } from './ingestion/collection/collection.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
     PrismaModule,
     IntegrationsModule,
     IngestionModule,
+    CollectionModule,
     HealthModule,
     UploadModule,
     EmailModule,
