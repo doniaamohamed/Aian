@@ -22,6 +22,9 @@ model Organization {
   eyes               OrganizationEye[]
   knowledgeFiles     OrganizationKnowledgeFile[]
   onboardingProgress OnboardingProgress?
+  knowledgeItems     KnowledgeItem[]
+  ingestionBatches   IngestionBatch[]
+  processingSettings OrganizationProcessingSettings?
 
   @@map("organizations")
 }

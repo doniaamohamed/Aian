@@ -22,9 +22,9 @@ model User {
   invitedByUser    User?       @relation("UserInvitations", fields: [invitedByUserId], references: [id])
   invitedUsers     User[]      @relation("UserInvitations")
 
-  // Relations الأخرى
+  // other Relations
   createdOrganizations Organization[] @relation("OrgCreator")
-  connectedIntegrations Integration[]
+  connectedProviders    ProviderConnection[]
   uploadedFiles         OrganizationKnowledgeFile[]
 
   @@map("users")
