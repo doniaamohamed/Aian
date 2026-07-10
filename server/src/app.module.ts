@@ -18,6 +18,7 @@ import { IngestionModule } from './ingestion/ingestion.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { CollectionModule } from './ingestion/collection/collection.module';
 import { SchedulerModule } from './ingestion/scheduler/scheduler.module';
+import { ProcessorModule } from './processor/processor.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { SchedulerModule } from './ingestion/scheduler/scheduler.module';
     IngestionModule,
     CollectionModule,
     SchedulerModule,
+    ProcessorModule,
     HealthModule,
     UploadModule,
     EmailModule,

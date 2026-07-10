@@ -1,8 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { KnowledgeItemRepository } from '../repositories/knowledge-item.repository';
 import { IngestionBatchRepository } from '../repositories/ingestion-batch.repository';
 import { ProcessingSettingsRepository } from '../repositories/processing-settings.repository';
-// import { ProcessorGateway } from '../../processor/processor-gateway.mock'; // Phase 8
+import type { KnowledgeProcessorGateway } from '../../integrations/contracts/processor-gateway.interface';
 
 @Injectable()
 export class BatchService {
@@ -12,6 +12,8 @@ export class BatchService {
     private readonly knowledgeItemRepo: KnowledgeItemRepository,
     private readonly batchRepo: IngestionBatchRepository,
     private readonly settingsRepo: ProcessingSettingsRepository,
+    @Inject('KNOWLEDGE_PROCESSOR_GATEWAY')
+    private readonly processorGateway: KnowledgeProcessorGateway,
   ) {}
 
   /**
@@ -62,12 +64,18 @@ export class BatchService {
       // 5. Lock the batch
       await this.batchRepo.markLocked(batch.id);
 
-      // 6. Hand off to processor (Phase 8 stub)
-      // await this.processorGateway.processBatch(batch.id);
-      await this.batchRepo.markHandedOff(batch.id);
-      await this.knowledgeItemRepo.markHandedOff(itemIds);
+      // 6. Hand off to processor
+      const handoffResult = await this.processorGateway.handoffBatch(batch.id);
       
-      this.logger.log(`Batch ${batch.id} created and handed off with ${itemIds.length} items.`);
+      if (handoffResult.accepted) {
+        await this.batchRepo.markHandedOff(batch.id);
+        await this.knowledgeItemRepo.markHandedOff(itemIds);
+        this.logger.log(`Batch ${batch.id} handed off with ${itemIds.length} items. Job ID: ${handoffResult.processorJobId}`);
+      } else {
+        await this.batchRepo.markFailed(batch.id, handoffResult.message);
+        await this.knowledgeItemRepo.unlockItems(itemIds); // Unlock so they can be tried again
+        this.logger.error(`Processor rejected batch ${batch.id}: ${handoffResult.message}`);
+      }
       
     } catch (error) {
       this.logger.error(`Failed to process batches for org ${organizationId}: ${(error as Error).message}`);
