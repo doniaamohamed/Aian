@@ -98,7 +98,7 @@ export default function PaymentPage() {
             ))}
           </div>
 
-          {/* <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+          {/* <div className="mt-8 rounded-2xl border border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-14 items-center justify-center rounded-lg bg-gold-gradient text-[11px] font-bold text-[#17130A]">
                 SECURE
@@ -123,7 +123,7 @@ export default function PaymentPage() {
           initial={{ opacity: 0, x: 12 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.05 }}
-          className="glass-strong relative overflow-hidden rounded-3xl p-7 lg:col-span-2"
+          className="glass-strong relative overflow-hidden rounded-3xl border border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] p-7 lg:col-span-2"
         >
           <div
             className="pointer-events-none absolute -top-16 -right-16 h-40 w-40 rounded-full blur-3xl"
@@ -135,7 +135,7 @@ export default function PaymentPage() {
           <div className="mt-5 space-y-3 text-[13.5px]">
             <Row label="Plan" value={plan.name} />
             <Row label="Billing cycle" value={cycle === "yearly" ? "Yearly (20% off)" : "Monthly"} />
-            <div className="my-3 h-px bg-white/10" />
+            <div className="my-3 h-px bg-black/10 dark:bg-white/10" />
             <div className="flex items-baseline justify-between">
               <span className="text-muted-foreground">Total due today</span>
               <span className="font-display text-[28px] font-semibold text-gold-gradient">${(totalCents / 100).toLocaleString()}</span>

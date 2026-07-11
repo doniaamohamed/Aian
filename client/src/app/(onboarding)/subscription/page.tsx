@@ -47,7 +47,7 @@ export default function SubscriptionPage() {
       subtitle="Pick the tier that fits your company. You can upgrade or downgrade at any time."
     >
       <div className="mb-8 flex items-center justify-center">
-        <div className="relative inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] p-1">
+        <div className="relative inline-flex items-center rounded-full border border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] p-1">
           {(["monthly", "yearly"] as const).map((c) => (
             <button
               key={c}
@@ -89,8 +89,8 @@ export default function SubscriptionPage() {
               className={cn(
                 "group relative overflow-hidden rounded-3xl border p-6 text-left transition-all",
                 active
-                  ? "border-[color:var(--gold-soft)]/50 bg-white/[0.05] ring-gold-glow"
-                  : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                  ? "border-[color:var(--gold-soft)]/40 bg-gradient-to-b from-[color:var(--card)] to-[color:var(--surface)] ring-gold-glow"
+                  : "border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] hover:border-black/20 dark:hover:border-white/20"
               )}
             >
               {plan.highlighted && (
@@ -102,7 +102,7 @@ export default function SubscriptionPage() {
                 <div
                   className={cn(
                     "flex h-10 w-10 items-center justify-center rounded-xl",
-                    active ? "bg-gold-gradient text-[#17130A]" : "border border-white/10 bg-white/[0.03] text-[color:var(--gold-soft)]"
+                    active ? "bg-gold-gradient text-[#17130A]" : "border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[color:var(--gold-soft)]"
                   )}
                 >
                   <Icon className="h-5 w-5" />
@@ -125,12 +125,12 @@ export default function SubscriptionPage() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-6 flex items-center justify-between border-t border-white/5 pt-4">
+              <div className="mt-6 flex items-center justify-between border-t border-black/5 dark:border-white/5 pt-4">
                 <span className="text-[12px] text-muted-foreground">{active ? "Selected" : "Select this plan"}</span>
                 <span
                   className={cn(
                     "flex h-5 w-5 items-center justify-center rounded-full border transition-all",
-                    active ? "border-[color:var(--gold-soft)] bg-gold-gradient" : "border-white/20"
+                    active ? "border-[color:var(--gold-soft)] bg-gold-gradient" : "border-black/20 dark:border-white/20"
                   )}
                 >
                   {active && <Check className="h-3 w-3 text-[#17130A]" />}
@@ -144,7 +144,7 @@ export default function SubscriptionPage() {
       <div className="mt-10 flex items-center justify-end gap-3">
         <button
           onClick={() => router.push("/workspaces")}
-          className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-[14px] text-muted-foreground transition-colors hover:text-foreground"
+          className="rounded-2xl border border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] px-5 py-3 text-[14px] text-muted-foreground transition-colors hover:text-foreground"
         >
           Back
         </button>

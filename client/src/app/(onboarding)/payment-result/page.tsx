@@ -9,10 +9,12 @@ import { billingApi } from "@/api/billing";
 import { PaymentVerificationResult } from "@/types/billing/billing";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 
 export default function PaymentResultPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const theme = useTheme();
   const [result, setResult] = useState<PaymentVerificationResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -84,12 +86,12 @@ export default function PaymentResultPage() {
       }
       maxWidth="max-w-3xl"
     >
-      <div className="grid gap-6">
+      {/* <div className="grid gap-6 "> */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="glass-strong relative overflow-hidden rounded-3xl p-8"
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.05 }}
+          className="glass-strong relative overflow-hidden rounded-3xl p-7 lg:col-span-2"
         >
           {isSuccess && (
             <div
@@ -108,7 +110,7 @@ export default function PaymentResultPage() {
             </h3>
 
             <div className="mt-8 w-full max-w-md space-y-4">
-              <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-6">
+              <div className={theme.resolvedTheme === "dark" ? "rounded-2xl border border-white/5 bg-white/[0.02] p-6" : "rounded-2xl border border-black/5 bg-black/[0.02] p-6"}>
                 <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground mb-4">
                   <Receipt className="h-3.5 w-3.5" /> Receipt details
                 </div>
@@ -149,7 +151,7 @@ export default function PaymentResultPage() {
                   onClick={() => router.push("/workspaces")}
                   className="btn-gold btn-gold-hover group inline-flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-[14.5px] font-semibold"
                 >
-                  Go to Dashboard <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  Go to Workspace <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </button>
               ) : (
                 <button
@@ -162,7 +164,7 @@ export default function PaymentResultPage() {
             </div>
           </div>
         </motion.div>
-      </div>
+      {/* </div> */}
     </OnboardingLayout>
   );
 }
