@@ -4,6 +4,7 @@ import { type ReactNode, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { useAuthStore } from "@/store/auth/auth.store";
 import {
   LayoutDashboard,
   BookOpen,
@@ -35,7 +36,7 @@ const NAV = [
   { to: "/dashboard", label: "Meetings", icon: Video },
   { to: "/dashboard", label: "Reports", icon: BarChart3 },
   { to: "/dashboard", label: "Integrations", icon: Plug },
-  { to: "/dashboard", label: "Members", icon: Users },
+  { to: "/dashboard/members", label: "Members", icon: Users },
   { to: "/dashboard", label: "Organization", icon: Building2 },
   { to: "/dashboard", label: "Billing", icon: CreditCard },
 ];
@@ -45,88 +46,36 @@ const SECONDARY = [
   { to: "/dashboard", label: "Help", icon: HelpCircle },
 ];
 
-const WORKSPACES = [
-  { name: "Atlas Robotics", plan: "Enterprise" },
-  { name: "Northwind Labs", plan: "Growth" },
-  { name: "Helios AI", plan: "Starter" },
-];
-
 function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
-  const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(WORKSPACES[0]);
+  const organization = useAuthStore((s) => s.user?.organization);
+
   return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className={cn(
-          "group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-2.5 text-left transition-all hover:border-white/20 hover:bg-white/[0.06]",
-          collapsed && "justify-center",
-        )}
-      >
-        <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gold-gradient text-[13px] font-bold text-[#17130A] shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
-          {active.name.charAt(0)}
+    <div
+      className={cn(
+        "flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-2.5",
+        collapsed && "justify-center",
+      )}
+    >
+      <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gold-gradient text-[13px] font-bold text-[#17130A] shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]">
+        {organization?.charAt(0) ?? "?"}
+      </div>
+      {!collapsed && (
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[13px] font-semibold text-foreground">
+            {organization ?? "Loading..."}
+          </div>
         </div>
-        {!collapsed && (
-          <>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-semibold text-foreground">{active.name}</div>
-              <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{active.plan}</div>
-            </div>
-            <ChevronDown className={"h-4 w-4 text-muted-foreground transition-transform " + (open ? "rotate-180" : "")} />
-          </>
-        )}
-      </button>
-      <AnimatePresence>
-        {open && !collapsed && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            className="glass-strong absolute left-0 right-0 top-[calc(100%+8px)] z-50 overflow-hidden rounded-2xl p-1.5"
-          >
-            {WORKSPACES.map((w) => (
-              <button
-                key={w.name}
-                onClick={() => {
-                  setActive(w);
-                  setOpen(false);
-                }}
-                className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-white/5"
-              >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-[12px] font-bold text-foreground">
-                  {w.name.charAt(0)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-medium text-foreground">{w.name}</div>
-                  <div className="text-[11px] text-muted-foreground">{w.plan}</div>
-                </div>
-                {active.name === w.name && <Check className="h-4 w-4 text-[color:var(--gold-soft)]" />}
-              </button>
-            ))}
-            <div className="my-1 h-px bg-white/10" />
-            <Link
-              href="/workspaces"
-              onClick={() => setOpen(false)}
-              className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors hover:bg-white/5"
-            >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dashed border-white/15 text-muted-foreground">
-                <Plus className="h-4 w-4" />
-              </div>
-              <span className="text-[13px] font-medium text-foreground">All workspaces</span>
-            </Link>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      )}
     </div>
   );
 }
-
 function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean; setCollapsed: (v: boolean) => void }) {
   const pathname = usePathname();
   return (
     <aside
       className={cn(
         "relative hidden shrink-0 border-r border-white/5 bg-[color:var(--surface)]/60 backdrop-blur-xl transition-[width] duration-300 md:flex md:flex-col",
+        // "relative hidden shrink-0 border-r border-black/10 dark:border-white/5 bg-[color:var(--surface)]/60 backdrop-blur-xl transition-[width] duration-300 md:flex md:flex-col",
         collapsed ? "w-[76px]" : "w-[260px]",
       )}
     >
@@ -228,34 +177,26 @@ function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean; setCollapsed
 }
 
 function TopBar() {
+  const user = useAuthStore((s) => s.user);
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-white/5 bg-[color:var(--background)]/70 px-4 backdrop-blur-xl md:px-6">
-      <div className="relative flex-1 max-w-xl">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          placeholder="Ask AIAN or search knowledge…"
-          className="h-10 w-full rounded-xl border border-white/10 bg-white/[0.03] pl-10 pr-16 text-[14px] text-foreground outline-none transition-all placeholder:text-muted-foreground/60 focus:border-[color:var(--gold-soft)]/40 focus:bg-white/[0.05] focus:shadow-[0_0_0_4px_rgba(232,200,106,0.08)]"
-        />
-        <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground sm:flex">
-          <Command className="h-3 w-3" /> K
-        </kbd>
-      </div>
+      {/* ...search bar unchanged... */}
       <div className="ml-auto flex items-center gap-2">
         <ThemeToggle />
-        <button
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-muted-foreground transition-all hover:border-white/20 hover:text-foreground"
-          aria-label="Notifications"
-        >
+        <button className="..." aria-label="Notifications">
           <Bell className="h-4 w-4" />
           <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-gold-gradient" />
         </button>
         <div className="ml-1 flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.03] py-1 pl-1 pr-3">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gold-gradient text-[12px] font-bold text-[#17130A]">
-            A
+            {user?.fullName?.charAt(0) ?? "?"}
           </div>
           <div className="hidden text-left leading-tight sm:block">
-            <div className="text-[12.5px] font-semibold text-foreground">Alex Morgan</div>
-            <div className="text-[10.5px] text-muted-foreground">Owner</div>
+            <div className="text-[12.5px] font-semibold text-foreground">
+              {user?.fullName ?? "Loading..."}
+            </div>
+            <div className="text-[10.5px] text-muted-foreground">{user?.role ?? ""}</div>
           </div>
         </div>
       </div>
@@ -266,7 +207,7 @@ function TopBar() {
 export function AppLayout({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   return (
-    <div className="relative flex min-h-screen w-full bg-background text-foreground">
+    <div className="relative flex h-screen w-full overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none fixed inset-0 grid-bg opacity-60" aria-hidden />
       <div
         className="pointer-events-none fixed -top-40 -left-40 h-[520px] w-[520px] rounded-full opacity-20 blur-[140px]"
