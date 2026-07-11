@@ -7,7 +7,7 @@ model EyeType {
 
   // Relations
   providers        EyeProvider[]
-  organizationEyes OrganizationEye[] @ignore
+  organizationEyes OrganizationEye[] 
 
   @@map("eye_types")
 }
@@ -16,6 +16,7 @@ model Provider {
   id             String   @id @default(uuid())
   key            String   @unique @db.VarChar(50)
   name           String   @db.VarChar(100)
+  logoUrl        String?  @map("logo_url") @db.Text
   oauthSupported Boolean  @map("oauth_supported")
   isActive       Boolean  @default(true) @map("is_active")
   createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -23,8 +24,8 @@ model Provider {
 
   // Relations
   eyeTypes         EyeProvider[]
-  organizationEyes OrganizationEye[] @ignore
-  integrations     Integration[]     @ignore
+  organizationEyes OrganizationEye[] 
+  integrations     Integration[]     
 
   @@map("providers")
 }
