@@ -12,13 +12,26 @@ import { RecentActivityCard } from "./RecentActivityCard";
 import { StatsRow } from "./StatsRow";
 import { SubscriptionCard } from "./SubscriptionCard";
 import { ConnectedIntegrationsCard } from "./ConnectedIntegrationsCard";
-// import { TeamCard } from "./TeamCard";
+import { TeamCard } from "./TeamCard";
 import { AskAianBar } from "./AskAianBar";
 import { PlaceholderListCard } from "./PlaceholderListCard";
 import { UsagePlaceholderCard } from "./UsagePlaceholderCard";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
   const { data, isLoading, isError, error } = useOwnerDashboard();
+  const router = useRouter();
+  useEffect(() => {
+    const status = (error as any)?.response?.status;
+    if (isError && status === 404) {
+      router.push("/workspace");
+    }
+  }, [isError, error, router]);
+
+  if (isError && (error as any)?.response?.status === 404) {
+    return null; 
+  }
 
   if (isLoading) {
     return (
@@ -80,6 +93,7 @@ export default function DashboardPage() {
           </div>
 
           <PlaceholderListCard title="Recent Messages" icon={MessageSquare} emptyMessage="No messages yet." />
+           <PlaceholderListCard title="Upcoming" icon={CalendarClock} emptyMessage="Nothing scheduled yet." />
         </div>
 
         {/* Right column */}
@@ -88,8 +102,8 @@ export default function DashboardPage() {
           {data.organization && <OrganizationDetailsCard organization={data.organization} />}
           <UsagePlaceholderCard />
           <ConnectedIntegrationsCard eyes={data.eyes} integrations={data.integrations} />
-          {/* {data.organization?.id && <TeamCard organizationId={data.organization.id} />} */}
-          <PlaceholderListCard title="Upcoming" icon={CalendarClock} emptyMessage="Nothing scheduled yet." />
+          {data.organization?.id && <TeamCard organizationId={data.organization.id} />}
+        
         </div>
       </div>
     </AppLayout>
