@@ -3,16 +3,12 @@
 import { useState } from "react";
 import { Mail, Plus } from "lucide-react";
 import { useInviteMember } from "@/hooks/use-members";
-
-const ROLE_OPTIONS = [
-  { id: "f707ce32-a263-4549-beb7-bd2877afc9f4", key: "owner", name: "Owner" },
-  { id: "cf738264-fb49-4cdf-b64b-4a7233bf8c1d", key: "admin", name: "Admin" },
-  { id: "68d24e5a-8125-4037-9df9-6daeb9fa356f", key: "member", name: "Member" },
-];
+import { useRoles } from "@/hooks/use-roles";
 
 export function InviteMemberSection({ organizationId }: { organizationId: string }) {
   const [email, setEmail] = useState("");
-  const [roleId, setRoleId] = useState(ROLE_OPTIONS[2].id); // defaults to Member
+  const [roleId, setRoleId] = useState<string>(""); 
+  const { data: roles ,isLoading: rolesLoading } = useRoles();
   const { mutate: invite, isPending } = useInviteMember(organizationId);
 
   const handleAdd = () => {
@@ -35,20 +31,26 @@ export function InviteMemberSection({ organizationId }: { organizationId: string
       <select
         value={roleId}
         onChange={(e) => setRoleId(e.target.value)}
+        disabled={rolesLoading || !roles?.length}
        className="h-12 appearance-none rounded-2xl border border-black/10 dark:border-white/10 bg-[color:var(--popover)] text-[color:var(--popover-foreground)] px-4 pr-10 text-[14px] outline-none focus:border-[color:var(--gold-soft)]/40"
       >
-        {ROLE_OPTIONS.map((r) => (
-          <option key={r.id}
-           value={r.id}
-           className="bg-[color:var(--popover)] text-[color:var(--popover-foreground)]"
+        <option value="" disabled className="bg-[color:var(--popover)] text-[color:var(--popover-foreground)]">
+          {rolesLoading ? "Loading roles..." : "Select role"}
+        </option>
+        {roles?.map((r) => (
+          <option
+            key={r.id}
+            value={r.id}
+            className="bg-[color:var(--popover)] text-[color:var(--popover-foreground)]"
           >
             {r.name}
           </option>
         ))}
       </select>
+     
       <button
         onClick={handleAdd}
-        disabled={isPending}
+        disabled={isPending || !roleId}
         className="btn-gold btn-gold-hover inline-flex h-12 items-center gap-2 rounded-2xl px-5 text-[14px] font-semibold disabled:opacity-50"
       >
         <Plus className="h-4 w-4" /> {isPending ? "Adding..." : "Add"}
@@ -57,4 +59,3 @@ export function InviteMemberSection({ organizationId }: { organizationId: string
   );
 }
 
-   
