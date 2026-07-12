@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service'
-import { User } from '@prisma/client'
+import { User, UserStatus } from '@prisma/client'
 
 @Injectable()
 export class UsersService {
@@ -8,12 +8,18 @@ export class UsersService {
         private readonly prismaService:PrismaService
     ){}
 
-    async create(fullName:string, email:string, passwordHash:string){
+    async create(fullName:string, email:string, passwordHash:string,status:UserStatus,otpHash:string,otpExpiresAt:Date,roleName='member'){
+        const role = await this.prismaService.role.findFirst({where:{key:roleName}});
         const user = await this.prismaService.user.create({
             data:{fullName,
                     email,
-                    passwordHash}
-        })
+                    passwordHash,
+                    status,
+                    otpHash,
+                    otpExpiresAt,
+                    roleId: role?.id
+                }
+            });
         return user;
     }
 
