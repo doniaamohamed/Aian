@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { ProviderClientFactory } from './provider-client.factory';
+import { SlackModule } from './slack/slack.module';
 
 /**
  * Global Integrations Module.
@@ -10,8 +11,9 @@ import { ProviderClientFactory } from './provider-client.factory';
  */
 @Global()
 @Module({
-  imports: [],
+  imports: [SlackModule],
   providers: [ProviderClientFactory],
   exports: [ProviderClientFactory],
 })
 export class IntegrationsModule {}
+

@@ -10,6 +10,7 @@ import { KnowledgeItemRepository } from './repositories/knowledge-item.repositor
 import { IngestionBatchRepository } from './repositories/ingestion-batch.repository';
 import { ProcessingSettingsRepository } from './repositories/processing-settings.repository';
 import { CollectionRunRepository } from './repositories/collection-run.repository';
+import { WebhookSignatureValidatorFactory } from './collection/webhooks/webhook-signature-validator.factory';
 
 /**
  * Global Ingestion Module.
@@ -31,6 +32,7 @@ import { CollectionRunRepository } from './repositories/collection-run.repositor
     IngestionBatchRepository,
     ProcessingSettingsRepository,
     CollectionRunRepository,
+    WebhookSignatureValidatorFactory,
   ],
   exports: [
     EncryptionService,
@@ -42,6 +44,7 @@ import { CollectionRunRepository } from './repositories/collection-run.repositor
     IngestionBatchRepository,
     ProcessingSettingsRepository,
     CollectionRunRepository,
+    WebhookSignatureValidatorFactory,
   ],
 })
 export class IngestionModule {}
