@@ -84,12 +84,6 @@ export class AuthController {
     return this.authService.verifyOtp(body.email, body.otp, body.purpose);
   }
 
-  @Post('resend-otp')
-  @HttpCode(HttpStatus.OK)
-  async resendOtp(@Body() body: ResendOtpDto) {
-    return this.authService.resendOtp(body.email, body.purpose);
-  }
-  
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(@Body() body: ResetPasswordDto) {
