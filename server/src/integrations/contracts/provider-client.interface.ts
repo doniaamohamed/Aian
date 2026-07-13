@@ -38,4 +38,10 @@ export interface ProviderClient {
   refreshCredentials?(
     connection: ProviderConnection,
   ): Promise<RefreshedCredentials>;
+
+  /**
+   * Revoke OAuth credentials on the provider side.
+   * Called when the user disconnects the provider.
+   */
+  revokeCredentials?(connection: ProviderConnection): Promise<void>;
 }

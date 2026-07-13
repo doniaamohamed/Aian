@@ -109,4 +109,32 @@ export class SlackClientService implements ProviderClient {
     this.logger.log(`Fetched ${resources.length} Slack channels`);
     return resources;
   }
+
+  /**
+   * Revoke the Slack OAuth access token.
+   * Hits the Slack API `auth.revoke` endpoint.
+   */
+  async revokeCredentials(connection: ProviderConnection): Promise<void> {
+    const token = this.encryptionService.decrypt(connection.accessTokenEncrypted);
+
+    try {
+      const response = await axios.post(
+        'https://slack.com/api/auth.revoke',
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (response.data.ok) {
+        this.logger.log(`Slack token revoked successfully for connection ${connection.id}`);
+      } else {
+        this.logger.warn(`Slack token revocation failed: ${response.data.error}`);
+        // We log a warning but don't throw an error, since the connection might
+        // already be revoked or invalid on Slack's side. We still want to delete it from DB.
+      }
+    } catch (error) {
+      this.logger.error(`Failed to reach Slack API for revocation: ${(error as Error).message}`);
+    }
+  }
 }

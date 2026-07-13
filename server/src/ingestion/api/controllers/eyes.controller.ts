@@ -1,12 +1,14 @@
 import { Controller, Get, Delete, Param, Query } from '@nestjs/common';
 import { ProviderConnectionRepository } from '../../repositories/provider-connection.repository';
 import { ProviderClientFactory } from '../../../integrations/provider-client.factory';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 @Controller('eyes')
 export class EyesController {
   constructor(
     private readonly connectionRepo: ProviderConnectionRepository,
     private readonly providerFactory: ProviderClientFactory,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Get()
@@ -26,7 +28,31 @@ export class EyesController {
 
   @Delete(':id')
   async deleteConnection(@Param('id') id: string) {
-    // In a real app, this should also check permissions and clean up resources
-    return this.connectionRepo.delete(id);
+    const conn = await this.connectionRepo.findByIdMapped(id);
+    if (!conn) {
+      return { success: false, message: 'Connection not found' };
+    }
+
+    try {
+      // 1. Resolve the provider client and invoke revokeCredentials if implemented
+      const client = this.providerFactory.getClient(conn.provider);
+      if (client && client.revokeCredentials) {
+        await client.revokeCredentials(conn);
+      }
+    } catch (err) {
+      // Log and swallow error to ensure we still clean up our database
+      console.error(`Failed to revoke credentials for connection ${id}:`, err);
+    }
+
+    // 2. Delete the connection from the DB
+    await this.connectionRepo.delete(id);
+
+    // 3. Update the OrganizationEye status back to disconnected
+    await this.prisma.organizationEye.update({
+      where: { id: conn.organizationEyeId },
+      data: { status: 'disconnected' },
+    });
+
+    return { success: true, message: 'Connection revoked and disconnected successfully' };
   }
 }
