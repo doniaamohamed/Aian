@@ -7,7 +7,8 @@ import {
   Body, 
   Param, 
   ParseUUIDPipe, 
-  Delete
+  Delete,
+  Patch
 } from '@nestjs/common';
 import { RolesPermissionsService } from './roles_permissions.service';
 import { CurrentUser } from '../decorators/current-user.decorator';
@@ -64,7 +65,7 @@ export class RolesPermissionsController {
   }
 
   @RequiredPermissions('roles.update')
-  @Put('role/:id')
+  @Patch('role/:id')
   async updateCustomRole(
     @Param('id', ParseUUIDPipe) roleId: string,
     @CurrentUser() user: any,
