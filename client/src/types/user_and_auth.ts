@@ -48,6 +48,8 @@ export enum OtpPurpose {
 
 export type VerifyOtpResponse = {
   success: boolean;
-  purpose: OtpPurpose;
-  resetToken?: string;
-};
+  data: {
+    purpose: OtpPurpose;
+    resetToken?: string;
+  };
+};  

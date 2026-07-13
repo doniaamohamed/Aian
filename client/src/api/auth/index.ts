@@ -5,7 +5,9 @@ import {
    RegisterCredentials, 
    ChangePasswordData, 
    AuthResponse, 
-   RefreshResponse 
+   RefreshResponse,
+   OtpPurpose,
+   VerifyOtpResponse
   } from "@/types/user_and_auth"; 
 
 
@@ -41,8 +43,13 @@ export const authApi = {
     return response.data;
   },
 
-  verifyOtp: async (email: string, otp: string) => {
-    const response = await api.post("/auth/verify-otp", { email, otp });
+  verifyOtp: async (email: string, otp: string, purpose: OtpPurpose): Promise<VerifyOtpResponse> => {
+    const response = await api.post("/auth/verify-otp", { email, otp, purpose });
+    return response.data;
+  },
+
+  resendOtp: async (email: string, purpose: OtpPurpose) => {
+    const response = await api.post("/auth/resend-otp", { email, purpose });
     return response.data;
   },
 
