@@ -6,15 +6,18 @@ import { useRouter } from "next/navigation";
 export const CreateWorkspaceCard = ({ disabled = false }: { disabled?: boolean }) => {
   const router = useRouter();
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => !disabled && router.push("/organization")}
+      disabled={disabled}
       className={cn(
-        "rounded-3xl border border-dashed p-6 w-[350px] transition-all flex flex-col justify-between",
-        "border-white/15 bg-white/[0.02]", 
-        disabled ? "opacity-60" : "hover:border-[color:var(--gold-soft)]/40 hover:bg-white/[0.04]"
+        "rounded-3xl border border-dashed p-6 w-[350px] transition-all flex flex-col justify-between text-left",
+        "border-black/15 dark:border-white/15 bg-black/[0.03] dark:bg-white/[0.02]", 
+        disabled ? "opacity-60 cursor-not-allowed" : "hover:border-[color:var(--gold-soft)]/40 hover:bg-black/[0.06] dark:hover:bg-white/[0.04] cursor-pointer"
       )}
     >
       <div>
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-[color:var(--gold-soft)] mb-5">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.04] text-[color:var(--gold-soft)] mb-5">
           <Plus className="h-6 w-6" />
         </div>
 
@@ -30,18 +33,16 @@ export const CreateWorkspaceCard = ({ disabled = false }: { disabled?: boolean }
         </div>
       </div>
 
-      <button 
-  type="button"
-  onClick={() => !disabled && router.push("/subscription")}
-  className={cn(
-    "inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-semibold shadow-[0_10px_30px_-12px_rgba(201,152,43,0.55)] w-fit transition-all",
-    disabled 
-      ? "bg-white/10 text-white/30 cursor-not-allowed" // شلنا pointer-events-none عشان يظهر شكل الممنوع
-      : "bg-gold-gradient text-[#17130A] hover:scale-105 cursor-pointer"
-  )}
->
-  <Sparkles className="h-3.5 w-3.5" /> Start onboarding
-</button>
-    </div>
+      <div 
+        className={cn(
+          "inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12px] font-semibold shadow-[0_10px_30px_-12px_rgba(201,152,43,0.55)] w-fit transition-all",
+          disabled 
+            ? "bg-black/10 dark:bg-white/10 text-black/40 dark:text-white/30" 
+            : "bg-gold-gradient text-[#17130A] hover:scale-105"
+        )}
+      >
+        <Sparkles className="h-3.5 w-3.5" /> Start onboarding
+      </div>
+    </button>
   );
 };
