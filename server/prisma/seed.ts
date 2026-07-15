@@ -91,6 +91,7 @@ async function main() {
     'roles.delete',
     'roles.assign_permissions',
     'permission.get',
+    'permissions.read',
     'users.read',
     'users.update',
     'users.delete',
@@ -370,6 +371,7 @@ async function main() {
         memberStatus: 'active',
         joinedAt: new Date(),
         organizationId: targetOrgId,
+        emailVerifiedAt: new Date(),
       },
     });
 
@@ -407,6 +409,7 @@ async function main() {
         memberStatus: 'active',
         invitedByUserId: ownerUser.id,
         joinedAt: new Date(),
+        emailVerifiedAt: new Date()
       },
     });
     createdUsers.push(user);
