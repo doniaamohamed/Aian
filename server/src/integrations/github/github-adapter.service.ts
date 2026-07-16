@@ -314,7 +314,9 @@ export class GitHubAdapterService implements ProviderAdapter {
         participants: [],
         contextLocation: `${repo.full_name} #${pr.number}`,
         sourceUrl: comment.html_url ?? null,
-        occurredAt: new Date(comment.updated_at ?? comment.created_at ?? Date.now()),
+        occurredAt: new Date(
+          comment.updated_at ?? comment.created_at ?? Date.now(),
+        ),
         metadata: {
           repositoryId: repo.id,
           prNumber: pr.number,
@@ -361,7 +363,9 @@ export class GitHubAdapterService implements ProviderAdapter {
         participants: [],
         contextLocation: `${repo.full_name} #${issue.number}`,
         sourceUrl: comment.html_url ?? null,
-        occurredAt: new Date(comment.updated_at ?? comment.created_at ?? Date.now()),
+        occurredAt: new Date(
+          comment.updated_at ?? comment.created_at ?? Date.now(),
+        ),
         metadata: {
           repositoryId: repo.id,
           issueNumber: issue.number,
@@ -407,7 +411,9 @@ export class GitHubAdapterService implements ProviderAdapter {
         })),
         contextLocation: `${repo.full_name} #${issue.number}`,
         sourceUrl: issue.html_url ?? null,
-        occurredAt: new Date(issue.updated_at ?? issue.created_at ?? Date.now()),
+        occurredAt: new Date(
+          issue.updated_at ?? issue.created_at ?? Date.now(),
+        ),
         metadata: {
           repositoryId: repo.id,
           issueNumber: issue.number,
@@ -419,14 +425,19 @@ export class GitHubAdapterService implements ProviderAdapter {
     ];
   }
 
-  private normalizePush(input: ProviderEventInput, payload: any): KnowledgeItem[] {
+  private normalizePush(
+    input: ProviderEventInput,
+    payload: any,
+  ): KnowledgeItem[] {
     this.assertRequiredFields(payload, 'push', [
       'repository.id',
       'repository.full_name',
     ]);
 
     const repo = payload.repository;
-    const commits: any[] = Array.isArray(payload.commits) ? payload.commits : [];
+    const commits: any[] = Array.isArray(payload.commits)
+      ? payload.commits
+      : [];
 
     // Skip commits missing an id — cannot generate a safe idempotency key without it.
     return commits
@@ -460,6 +471,11 @@ export class GitHubAdapterService implements ProviderAdapter {
             repositoryId: repo.id,
             ref: payload.ref,
             sha: commit.id,
+            filesChanged: {
+              added: commit.added ?? [],
+              modified: commit.modified ?? [],
+              removed: commit.removed ?? [],
+            },
           },
         }),
       );
@@ -472,7 +488,10 @@ export class GitHubAdapterService implements ProviderAdapter {
   ): Array<{ externalId?: string; name?: string; email?: string }> {
     const participants: Array<{ externalId?: string; name?: string }> = [];
     for (const reviewer of pr.requested_reviewers ?? []) {
-      participants.push({ externalId: String(reviewer.id), name: reviewer.login });
+      participants.push({
+        externalId: String(reviewer.id),
+        name: reviewer.login,
+      });
     }
     if (pr.assignee) {
       participants.push({
