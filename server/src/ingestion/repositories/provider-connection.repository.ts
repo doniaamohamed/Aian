@@ -141,4 +141,10 @@ export class ProviderConnectionRepository {
     if (!conn) return null;
     return this.mapToInterface(conn);
   }
+  async updateConnectionMetadata(id: string, metadata: Record<string, unknown>) {
+    return this.prisma.providerConnection.update({
+      where: { id },
+      data: { connectionMetadata: metadata as any },
+    });
+  }
 }
