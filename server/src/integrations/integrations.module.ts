@@ -1,17 +1,19 @@
 import { Global, Module } from '@nestjs/common';
 import { ProviderClientFactory } from './provider-client.factory';
+import { SlackModule } from './slack/slack.module';
+import { GithubModule } from './github/github.module';
 import { JiraModule } from './jira/jira.module';
 
 /**
  * Global Integrations Module.
- * 
+ *
  * Provides the ProviderClientFactory which acts as a registry
  * for all provider-specific implementations. By making this global,
  * provider modules can easily inject the factory and register themselves.
  */
 @Global()
 @Module({
-  imports: [JiraModule],
+  imports: [SlackModule, GithubModule, JiraModule],
   providers: [ProviderClientFactory],
   exports: [ProviderClientFactory],
 })

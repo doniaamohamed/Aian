@@ -22,7 +22,6 @@ export class BillingController {
 
   constructor(private readonly billingService: BillingService) {}
 
-
   @Get('plans')
   // @UseGuards(AuthGaurd)
   @HttpCode(HttpStatus.OK)
@@ -30,7 +29,6 @@ export class BillingController {
     return this.billingService.getPlans();
   }
 
-  
   @Get('plans/:slug')
   // @UseGuards(AuthGaurd)
   @HttpCode(HttpStatus.OK)
@@ -38,7 +36,6 @@ export class BillingController {
     return this.billingService.getPlanBySlug(slug);
   }
 
-  
   @Post('checkout')
   @RequiredPermissions('billing.manage')
   @HttpCode(HttpStatus.CREATED)
@@ -46,7 +43,6 @@ export class BillingController {
     return this.billingService.checkout(dto);
   }
 
-  
   @Post('webhook')
   async handleWebhook(@Body() payload: PaymobCallbackPayload) {
     this.logger.log('Received billing webhook');
@@ -54,14 +50,11 @@ export class BillingController {
     return { received: true };
   }
 
- 
   @Get('verify/:providerPaymentId')
   // @UseGuards(AuthGaurd)
   @RequiredPermissions('billing.manage')
   @HttpCode(HttpStatus.OK)
-  async verifyPayment(
-    @Param('providerPaymentId') providerPaymentId: string,
-  ) {
+  async verifyPayment(@Param('providerPaymentId') providerPaymentId: string) {
     return this.billingService.verifyPayment(providerPaymentId);
   }
 }

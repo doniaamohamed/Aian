@@ -1,74 +1,97 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/only-throw-error */
-/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { EyeStatus } from '@prisma/client';
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class OnboardingService {
   constructor(private prisma: PrismaService) {}
 
   async createOrganization(userId: string, dto: CreateOrganizationDto) {
-    return await this.prisma.$transaction(async (tx) => {
-      const org = await tx.organization.create({
-        data: {
-          ...dto,
-          status: 'pending_connections',
-          createdByUser: { connect: { id: userId } },
-        },
-      });
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const org = await tx.organization.create({
+          data: {
+            ...dto,
+            status: 'pending_connections',
+            createdByUser: { connect: { id: userId } },
+          },
+        });
 
-      const ownerRole = await tx.role.findFirst({
-        where: { key: 'owner', organizationId: null },
-      });
+        const ownerRole = await tx.role.findFirst({
+          where: { key: 'owner', organizationId: null },
+        });
 
-      if (!ownerRole) {
-        throw new Error('Owner role not found. Please check seed data.');
+        if (!ownerRole) {
+          throw new Error('Owner role not found. Please check seed data.');
+        }
+
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            organizationId: org.id,
+            roleId: ownerRole.id,
+            memberStatus: 'active',
+            joinedAt: new Date(),
+          },
+        });
+
+        const eyeTypes = await tx.eyeType.findMany();
+
+        const eyesData = eyeTypes.map((type) => ({
+          organizationId: org.id,
+          eyeTypeId: type.id,
+          status: EyeStatus.disconnected,
+          syncSchedule: '0 0 * * *',
+          settings: {},
+        }));
+
+        await tx.organizationEye.createMany({
+          data: eyesData,
+        });
+
+        await tx.onboardingProgress.create({
+          data: {
+            organizationId: org.id,
+            currentStep: 'providers',
+            isCompleted: false,
+            completedSteps: { organization_created: true },
+            startedAt: new Date(),
+          },
+        });
+
+        return org;
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const target = (error.meta?.target as string[]) ?? ['slug'];
+        const field = target[0] ?? 'slug';
+
+        throw new HttpException(
+          {
+            success: false,
+            message: `This organization ${field} is already taken. Please choose another one.`,
+            error: {
+              code: 'VALIDATION_ERROR',
+              fields: {
+                [field]: [`This ${field} is already taken.`],
+              },
+            },
+          },
+          HttpStatus.CONFLICT,
+        );
       }
-
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          organizationId: org.id,
-          roleId: ownerRole.id,
-          memberStatus: 'active',
-          joinedAt: new Date(),
-        },
-      });
-
-      const eyeTypes = await tx.eyeType.findMany();
-
-      const eyesData = eyeTypes.map((type) => ({
-        organizationId: org.id,
-        eyeTypeId: type.id,
-        status: EyeStatus.disconnected,
-        syncSchedule: '0 0 * * *',
-        settings: {},
-      }));
-
-      await tx.organizationEye.createMany({
-        data: eyesData,
-      });
-
-      await tx.onboardingProgress.create({
-        data: {
-          organizationId: org.id,
-          currentStep: 'providers',
-          isCompleted: false,
-          completedSteps: {organization_created: true},
-          startedAt: new Date(),
-        },
-      });
-
-      return org;
-    });
+      throw error;
+    }
   }
 
   async updateProviders(
-    organizationId: string, 
+    organizationId: string,
     providers: { eyeType: string; providerKey: string }[],
   ) {
     return await this.prisma.$transaction(async (tx) => {
@@ -141,13 +164,13 @@ export class OnboardingService {
     });
   }
 
-  async getProgress(organizationId: string) { 
+  async getProgress(organizationId: string) {
     return await this.prisma.onboardingProgress.findUnique({
       where: { organizationId },
     });
   }
 
-  async completeOnboarding(organizationId: string) { 
+  async completeOnboarding(organizationId: string) {
     return await this.prisma.onboardingProgress.update({
       where: { organizationId },
       data: {

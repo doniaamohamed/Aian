@@ -48,10 +48,20 @@ export class ProviderResourceSelectionRepository {
     // Select the chosen ones
     if (externalResourceIds.length > 0) {
       await this.prisma.providerResourceSelection.updateMany({
-        where: { connectionId, externalResourceId: { in: externalResourceIds } },
+        where: {
+          connectionId,
+          externalResourceId: { in: externalResourceIds },
+        },
         data: { isSelected: true },
       });
     }
+  }
+
+  async deselectAll(connectionId: string) {
+    return this.prisma.providerResourceSelection.updateMany({
+      where: { connectionId },
+      data: { isSelected: false },
+    });
   }
 
   async deleteByConnectionId(connectionId: string) {
