@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { ProviderClientFactory } from './provider-client.factory';
+import { JiraModule } from './jira/jira.module';
 
 /**
  * Global Integrations Module.
@@ -10,7 +11,7 @@ import { ProviderClientFactory } from './provider-client.factory';
  */
 @Global()
 @Module({
-  imports: [],
+  imports: [JiraModule],
   providers: [ProviderClientFactory],
   exports: [ProviderClientFactory],
 })
