@@ -174,7 +174,9 @@ export class SlackClientService implements ProviderClient {
     connection: ProviderConnection,
     payload: MessagePayload,
   ): Promise<MessageSendResult> {
-    const token = this.encryptionService.decrypt(connection.accessTokenEncrypted);
+    const token = this.encryptionService.decrypt(
+      connection.accessTokenEncrypted,
+    );
 
     const body: Record<string, unknown> = {
       channel: payload.targetId,

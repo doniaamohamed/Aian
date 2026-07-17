@@ -1,4 +1,8 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as jwt from 'jsonwebtoken';
@@ -10,7 +14,11 @@ import {
   ProviderResource,
 } from '../contracts';
 import { EncryptionService } from '../../common/encryption.service';
-import { GithubAppEnvKeys, GithubApiUrls, GithubResourceType } from './github-connection.constants';
+import {
+  GithubAppEnvKeys,
+  GithubApiUrls,
+  GithubResourceType,
+} from './github-connection.constants';
 
 /**
  * GitHub-specific implementation of ProviderClient.

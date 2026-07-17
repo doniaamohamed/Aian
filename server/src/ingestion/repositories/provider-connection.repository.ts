@@ -17,9 +17,9 @@ export class ProviderConnectionRepository {
   async findByIdMapped(id: string) {
     const conn = await this.prisma.providerConnection.findUnique({
       where: { id },
-      include: { 
+      include: {
         organizationEye: { include: { eyeType: true } },
-        provider: true
+        provider: true,
       },
     });
     if (!conn) return null;
@@ -43,9 +43,9 @@ export class ProviderConnectionRepository {
   ) {
     const conn = await this.prisma.providerConnection.findFirst({
       where: { externalAccountId, providerId },
-      include: { 
+      include: {
         organizationEye: { include: { eyeType: true } },
-        provider: true
+        provider: true,
       },
     });
     if (!conn) return null;
@@ -55,9 +55,9 @@ export class ProviderConnectionRepository {
   async findByOrganizationId(organizationId: string) {
     return this.prisma.providerConnection.findMany({
       where: { organizationEye: { organizationId } },
-      include: { 
+      include: {
         organizationEye: { include: { eyeType: true } },
-        provider: true
+        provider: true,
       },
     });
   }
@@ -68,7 +68,7 @@ export class ProviderConnectionRepository {
       organizationEyeId: conn.organizationEyeId,
       organizationId: conn.organizationEye?.organizationId || '',
       providerId: conn.providerId,
-      provider: conn.providerId as any, // Keep for backward compatibility
+      provider: conn.providerId, // Keep for backward compatibility
       providerKey: conn.provider?.key || '',
       eyeType: conn.organizationEye?.eyeType?.key || '',
       accessTokenEncrypted: conn.accessTokenEncrypted,
@@ -130,7 +130,10 @@ export class ProviderConnectionRepository {
     });
   }
 
-  async updateConnectionMetadata(id: string, metadata: Record<string, unknown>) {
+  async updateConnectionMetadata(
+    id: string,
+    metadata: Record<string, unknown>,
+  ) {
     return this.prisma.providerConnection.update({
       where: { id },
       data: { connectionMetadata: metadata as any },

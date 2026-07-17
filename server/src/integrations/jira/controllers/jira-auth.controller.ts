@@ -1,5 +1,13 @@
-import { Controller, Get, Query, Res, BadRequestException, Logger, InternalServerErrorException } from '@nestjs/common';
-import { Response } from 'express';
+import {
+  Controller,
+  Get,
+  Query,
+  Res,
+  BadRequestException,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import type { Response } from 'express';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ProviderConnectionRepository } from '../../../ingestion/repositories/provider-connection.repository';
 import { EncryptionService } from '../../../common/encryption.service';
@@ -18,7 +26,10 @@ export class JiraAuthController {
   ) {}
 
   @Get('install')
-  install(@Query('organizationEyeId') organizationEyeId: string, @Res() res: Response) {
+  install(
+    @Query('organizationEyeId') organizationEyeId: string,
+    @Res() res: Response,
+  ) {
     if (!organizationEyeId) {
       throw new BadRequestException('organizationEyeId is required');
     }
@@ -26,11 +37,15 @@ export class JiraAuthController {
     const clientId = this.configService.get<string>('JIRA_CLIENT_ID');
     const redirectUri = this.configService.get<string>('JIRA_REDIRECT_URI');
     const scopes = this.configService.get<string>('JIRA_SCOPES');
-    const authUrl = this.configService.get<string>('JIRA_AUTH_URL') || 'https://auth.atlassian.com/authorize';
+    const authUrl =
+      this.configService.get<string>('JIRA_AUTH_URL') ||
+      'https://auth.atlassian.com/authorize';
 
     if (!clientId || !redirectUri || !scopes) {
       this.logger.error('Missing Jira environment variables');
-      throw new InternalServerErrorException('Jira configuration is incomplete');
+      throw new InternalServerErrorException(
+        'Jira configuration is incomplete',
+      );
     }
 
     // Securely encode organizationEyeId into state
@@ -50,23 +65,30 @@ export class JiraAuthController {
   }
 
   @Get('callback')
-  async callback(@Query('code') code: string, @Query('state') state: string, @Res() res: Response) {
+  async callback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Res() res: Response,
+  ) {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-    
+
     try {
       if (!code || !state) {
         throw new BadRequestException('Missing code or state');
       }
 
       // Decode state
-      let stateObj;
+      let stateObj: { orgEyeId?: string } | undefined;
       try {
-        stateObj = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
-      } catch (err) {
+        const parsed = JSON.parse(Buffer.from(state, 'base64').toString('utf8')) as unknown;
+        if (typeof parsed === 'object' && parsed !== null) {
+          stateObj = parsed as { orgEyeId?: string };
+        }
+      } catch {
         throw new BadRequestException('Invalid state format');
       }
 
-      const organizationEyeId = stateObj.orgEyeId;
+      const organizationEyeId = stateObj?.orgEyeId;
       if (!organizationEyeId) {
         throw new BadRequestException('Invalid state: missing orgEyeId');
       }
@@ -74,14 +96,23 @@ export class JiraAuthController {
       const clientId = this.configService.get<string>('JIRA_CLIENT_ID');
       const clientSecret = this.configService.get<string>('JIRA_CLIENT_SECRET');
       const redirectUri = this.configService.get<string>('JIRA_REDIRECT_URI');
-      const tokenUrl = this.configService.get<string>('JIRA_TOKEN_URL') || 'https://auth.atlassian.com/oauth/token';
+      const tokenUrl =
+        this.configService.get<string>('JIRA_TOKEN_URL') ||
+        'https://auth.atlassian.com/oauth/token';
 
       if (!clientId || !clientSecret || !redirectUri) {
-        throw new InternalServerErrorException('Jira configuration is incomplete');
+        throw new InternalServerErrorException(
+          'Jira configuration is incomplete',
+        );
       }
 
       // Exchange authorization code
-      const tokenResponse = await axios.post(tokenUrl, {
+      const tokenResponse = await axios.post<{
+        access_token?: string;
+        refresh_token?: string;
+        expires_in?: number;
+        scope?: string;
+      }>(tokenUrl, {
         grant_type: 'authorization_code',
         client_id: clientId,
         client_secret: clientSecret,
@@ -89,29 +120,43 @@ export class JiraAuthController {
         redirect_uri: redirectUri,
       });
 
-      const { access_token, refresh_token, expires_in, scope } = tokenResponse.data;
+      const { access_token, refresh_token, expires_in, scope } =
+        tokenResponse.data;
 
       if (!access_token) {
-        throw new InternalServerErrorException('Failed to retrieve access token from Jira');
+        throw new InternalServerErrorException(
+          'Failed to retrieve access token from Jira',
+        );
       }
 
       // Encrypt tokens
       const encryptedAccessToken = this.encryptionService.encrypt(access_token);
-      const encryptedRefreshToken = refresh_token ? this.encryptionService.encrypt(refresh_token) : null;
+      const encryptedRefreshToken = refresh_token
+        ? this.encryptionService.encrypt(refresh_token)
+        : null;
 
       const tokenExpiresAt = new Date();
-      tokenExpiresAt.setSeconds(tokenExpiresAt.getSeconds() + (expires_in || 3600));
+      tokenExpiresAt.setSeconds(
+        tokenExpiresAt.getSeconds() + (expires_in || 3600),
+      );
 
       const scopesArray = scope ? scope.split(' ') : [];
 
       // Find Jira provider ID
-      const provider = await this.prisma.provider.findUnique({ where: { key: 'jira' } });
+      const provider = await this.prisma.provider.findUnique({
+        where: { key: 'jira' },
+      });
       if (!provider) {
-        throw new InternalServerErrorException('Jira provider not found in database');
+        throw new InternalServerErrorException(
+          'Jira provider not found in database',
+        );
       }
 
       // Update or create connection
-      const existingConn = await this.providerConnectionRepo.findByOrganizationEyeId(organizationEyeId);
+      const existingConn =
+        await this.providerConnectionRepo.findByOrganizationEyeId(
+          organizationEyeId,
+        );
 
       if (existingConn) {
         await this.providerConnectionRepo.update(existingConn.id, {
@@ -134,10 +179,23 @@ export class JiraAuthController {
         });
       }
 
-      return res.redirect(`${frontendUrl}/integrations/success?provider=jira&success=true`);
-    } catch (error: any) {
-      this.logger.error('Jira OAuth callback failed', error.response?.data || error.message);
-      return res.redirect(`${frontendUrl}/integrations/error?provider=jira&error=oauth_failed`);
+      return res.redirect(
+        `${frontendUrl}/integrations/success?provider=jira&success=true`,
+      );
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        this.logger.error(
+          'Jira OAuth callback failed',
+          error.response?.data || error.message,
+        );
+      } else if (error instanceof Error) {
+        this.logger.error('Jira OAuth callback failed', error.message);
+      } else {
+        this.logger.error('Jira OAuth callback failed', 'Unknown error');
+      }
+      return res.redirect(
+        `${frontendUrl}/integrations/error?provider=jira&error=oauth_failed`,
+      );
     }
   }
 }

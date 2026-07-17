@@ -5,7 +5,11 @@ import { WebhookSignatureValidator } from '../../../ingestion/collection/webhook
 @Injectable()
 export class JiraWebhookValidator implements WebhookSignatureValidator {
   // TODO: Implement validate
-  async validate(req: Request, rawBody: Buffer, secret: string): Promise<boolean> {
+  async validate(
+    req: Request,
+    rawBody: Buffer,
+    secret: string,
+  ): Promise<boolean> {
     return false;
   }
 

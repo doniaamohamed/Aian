@@ -28,7 +28,7 @@ export class GithubAuthController {
     private readonly prisma: PrismaService,
     private readonly connectionRepo: ProviderConnectionRepository,
     private readonly encryptionService: EncryptionService,
-    private readonly githubClient: GithubClientService
+    private readonly githubClient: GithubClientService,
   ) {}
 
   /**
@@ -37,12 +37,16 @@ export class GithubAuthController {
    * this installation belongs to once GitHub redirects back.
    */
   @Get('install')
-  install(@Query('organizationEyeId') organizationEyeId: string, @Res() res: Response) {
+  install(
+    @Query('organizationEyeId') organizationEyeId: string,
+    @Res() res: Response,
+  ) {
     if (!organizationEyeId) {
       throw new BadRequestException('organizationEyeId is required');
     }
 
-    const appName = this.configService.get<string>('GITHUB_APP_NAME') ?? 'aian-dev-donia';
+    const appName =
+      this.configService.get<string>('GITHUB_APP_NAME') ?? 'aian-dev-donia';
     const installUrl = `${GithubApiUrls.APP_INSTALL}/${appName}/installations/new?state=${organizationEyeId}`;
 
     return res.redirect(installUrl);
@@ -120,7 +124,9 @@ export class GithubAuthController {
       connectedAt: new Date(),
     } as any);
 
-    return res.send('GitHub App connected successfully. You can close this window.');
+    return res.send(
+      'GitHub App connected successfully. You can close this window.',
+    );
   }
 
   /**
