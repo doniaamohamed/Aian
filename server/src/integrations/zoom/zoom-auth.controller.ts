@@ -116,7 +116,7 @@ export class ZoomAuthController {
           },
         },
       );
-
+      console.log(tokenResponse);
       const data = tokenResponse.data;
 
       const tokenExpiresAt = new Date();
@@ -127,16 +127,26 @@ export class ZoomAuthController {
         ? this.encryptionService.encrypt(data.refresh_token)
         : null;
 
+      const webhookSecret = this.encryptionService.encrypt(process.env.ZOOM_WEBHOOK_SECRET as string);
+      const user_data = await axios.get('https://api.zoom.us/v2/users/me', {
+              headers: {
+                Authorization: `Bearer ${data.access_token}`,
+              },
+      });  
+
       const connection = await this.connectionRepo.create({
         organizationEyeId,
         providerId: zoomProvider.id,
         status: 'connected',
-        externalAccountId: data.owner_id || 'unknown',
+        externalAccountId: user_data.data.account_id || 'unknown',
+        externalAccountName: user_data.data.display_name,
         accessTokenEncrypted: encryptedAccessToken,
         refreshTokenEncrypted: encryptedRefreshToken,
         tokenExpiresAt,
         scopes: data.scope ? data.scope.split(' ') : [],
         connectedAt: new Date(),
+        lastVerifiedAt: new Date(),
+        webhookSecret,
         connectionMetadata: {
           token_type: data.token_type,
         },
@@ -201,3 +211,42 @@ export class ZoomAuthController {
     };
   }
 }
+
+
+/*
+get('https://api.zoom.us/v2/users/me')
+response.data: {
+    id: 'DzQ9MFEBTnWCbA79wfNsww',
+    first_name: 'Muhammad',
+    last_name: 'Elazzazy',
+    display_name: 'Muhammad Elazzazy',
+    email: 'mohamadelazzazy@gmail.com',
+    type: 1,
+    role_name: 'Owner',
+    pmi: 4127959008,
+    use_pmi: false,
+    personal_meeting_url: 'https://us05web.zoom.us/j/4127959008?pwd=ZaHAvosa2pGSjLlwgRf72RYpXxsysR.1',
+    timezone: 'Africa/Cairo',
+    verified: 0,
+    dept: '',
+    created_at: '2024-08-19T08:59:47Z',
+    last_login_time: '2026-07-17T15:13:35Z',
+    last_client_version: '7.0.2.38719(android)',
+    pic_url: 'https://us05web.zoom.us/p/v2/2b313eb51da000d4b5f95c738e93976b5069a2ea2eb17254616c593c86b3defc/1e066c90-964e-4b10-a4f5-f6bf6088045e-8196',
+    cms_user_id: '',
+    jid: 'dzq9mfebtnwcba79wfnsww@xmpp.zoom.us',
+    group_ids: [],
+    im_group_ids: [],
+    account_id: 'Ws9lYbOZT56qC8fzSVx-zg',
+    language: 'en-US',
+    phone_country: '',
+    phone_number: '',
+    status: 'active',
+    job_title: '',
+    cost_center: '',
+    location: '',
+    login_types: [ 1 ],
+    role_id: '0',
+    cluster: 'us05',
+    user_created_at: '2024-08-19T08:59:48Z'
+  }*/

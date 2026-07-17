@@ -22,7 +22,7 @@ export class ZoomClientService implements ProviderClient {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-
+      //console.log(response)
       this.logger.log(`Zoom connection verified for user: ${response.data.email}`);
       return {
         isValid: true,
