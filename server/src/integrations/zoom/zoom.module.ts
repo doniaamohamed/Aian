@@ -7,9 +7,13 @@ import { WebhookSignatureValidatorFactory } from '../../ingestion/collection/web
 import { ProviderClientFactory } from '../provider-client.factory';
 import { Provider } from '../contracts';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ZoomEventsController } from './zoom-events.controller';
 
 @Module({
-  controllers: [ZoomAuthController],
+  controllers: [
+    ZoomAuthController,
+    ZoomEventsController
+  ],
   providers: [
     ZoomClientService, 
     ZoomAdapterService, 
