@@ -111,9 +111,11 @@ export class HistoricalSyncService {
             
             for (const rawEvent of rawEvents) {
               const eventInput = {
-                type: 'historical',
-                payload: rawEvent,
-                resourceId: resource.externalResourceId,
+                rawPayload: rawEvent,
+                organizationId: connection.organizationId,
+                connectionId: connection.id,
+                rawEventReference: `historical-sync-${runId}`,
+                providerEventType: 'historical',
               };
 
               try {
