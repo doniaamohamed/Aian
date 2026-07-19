@@ -26,7 +26,7 @@ export class JiraAuthController {
   ) {}
 
   @Get('install')
-  async install(@Query('organizationEyeId') organizationEyeId: string) {
+  async install(@Query('organizationEyeId') organizationEyeId: string , @Res() res: Response) {
     if (!organizationEyeId) {
       throw new BadRequestException('organizationEyeId is required');
     }
@@ -66,9 +66,7 @@ export class JiraAuthController {
     url.searchParams.append('response_type', 'code');
     url.searchParams.append('prompt', 'consent');
 
-    return {
-      url: url.toString(),
-    };
+    return res.redirect(url.toString());
   }
 
   @Get('callback')

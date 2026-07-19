@@ -3,11 +3,31 @@
 import { motion } from "motion/react";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { AnimatedEye } from "./components/AnimatedEye";
-import { getProvider } from "./providers";
 import Link from "next/link";
+import { useIntegrationsStore } from "@/store/integrations/integrations.store";
+import { useEffect, useState } from "react";
+import { getAvailableResources, ProviderKey } from "@/api/integrations";
 
 export function IntegrationSuccess({ providerKey }: { providerKey: string }) {
-  const provider = getProvider(providerKey);
+  const { getProviderByKey, fetchIntegrations } = useIntegrationsStore();
+  const provider = getProviderByKey(providerKey);
+  const [resources, setResources] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchIntegrations();
+  }, [fetchIntegrations]);
+
+  const connectionId = provider?.connectionId;
+
+  useEffect(() => {
+    if (connectionId) {
+      getAvailableResources(providerKey as ProviderKey, connectionId)
+        .then(setResources)
+        .catch(console.error);
+    }
+  }, [connectionId, providerKey]);
+
+  if (!provider) return null;
 
   return (
     <div className="w-full">
@@ -98,9 +118,9 @@ export function IntegrationSuccess({ providerKey }: { providerKey: string }) {
           className="glass mt-10 grid w-full max-w-lg grid-cols-3 gap-3 rounded-2xl p-4 bg-white dark:bg-transparent shadow-sm dark:shadow-none border border-black/5 dark:border-white/10"
         >
           {[
-            { label: "Detected", value: `${provider.sampleResources.length * 12}` },
-            { label: resourceUnit(provider.resourceLabel), value: `${provider.sampleResources.length}+` },
-            { label: "Members", value: `${sumMembers(provider.sampleResources)}` },
+            { label: "Detected", value: resources.length > 0 ? `${resources.length * 12}` : "..." },
+            { label: resourceUnit(provider.resourceLabel), value: resources.length > 0 ? `${resources.length}` : "..." },
+            { label: "Members", value: resources.length > 0 ? `${sumMembers(resources)}` : "..." },
           ].map((s) => (
             <div key={s.label} className="text-center">
               <div className="font-display text-[20px] font-semibold text-foreground">{s.value}</div>
@@ -116,6 +136,6 @@ export function IntegrationSuccess({ providerKey }: { providerKey: string }) {
 function resourceUnit(label: string) {
   return label;
 }
-function sumMembers(list: { members?: number }[]) {
-  return list.reduce((a, b) => a + (b.members ?? 0), 0);
+function sumMembers(list: any[]) {
+  return list.reduce((a, b) => a + (b.memberCount ?? b.members ?? 0), 0);
 }

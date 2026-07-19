@@ -4,14 +4,34 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { ShieldCheck, Lock, ArrowRight, ExternalLink, Check } from "lucide-react";
 import { ProviderHero } from "./components/ProviderHero";
-import { getProvider } from "./providers";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { getInstallUrl, ProviderKey } from "@/api/integrations";
+import { useIntegrationsStore } from "@/store/integrations/integrations.store";
+import { useEffect } from "react";
 
 export function IntegrationConnect({ providerKey }: { providerKey: string }) {
-  const provider = getProvider(providerKey);
+  const { getProviderByKey, fetchIntegrations } = useIntegrationsStore();
+  const provider = getProviderByKey(providerKey);
   const [accepted, setAccepted] = useState(false);
   const router = useRouter();
+  
+  useEffect(() => {
+    fetchIntegrations();
+  }, [fetchIntegrations]);
+
+  const organizationEyeId = provider?.organizationEyeId;
+
+  const handleConnect = () => {
+    if (organizationEyeId) {
+      const url = getInstallUrl(providerKey as ProviderKey, organizationEyeId);
+      window.location.href = url;
+    } else {
+      console.error("Organization Eye not found for provider");
+    }
+  };
+
+  if (!provider) return null;
 
   return (
     <div className="w-full">
@@ -116,8 +136,8 @@ export function IntegrationConnect({ providerKey }: { providerKey: string }) {
             </label>
 
             <button
-              disabled={!accepted}
-              onClick={() => router.push(`/eyes/${providerKey}/redirect`)}
+              disabled={!accepted || !organizationEyeId}
+              onClick={handleConnect}
               className="btn-gold btn-gold-hover mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[13.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:transform-none text-[#17130A]"
             >
               <ExternalLink className="h-4 w-4" />

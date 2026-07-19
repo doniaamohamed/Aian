@@ -23,6 +23,23 @@ export class JiraClientService implements ProviderClient {
     private readonly configService: ConfigService,
   ) {}
 
+  private async getValidToken(connection: ProviderConnection): Promise<string> {
+    if (
+      connection.tokenExpiresAt &&
+      new Date().getTime() >= connection.tokenExpiresAt.getTime() - 5 * 60000 // 5 min buffer
+    ) {
+      try {
+        const refreshed = await this.refreshCredentials(connection);
+        connection.accessTokenEncrypted = refreshed.accessTokenEncrypted;
+        connection.refreshTokenEncrypted = refreshed.refreshTokenEncrypted || connection.refreshTokenEncrypted;
+        connection.tokenExpiresAt = refreshed.tokenExpiresAt;
+      } catch (err) {
+        this.logger.warn(`Proactive token refresh failed for connection ${connection.id}`);
+      }
+    }
+    return this.encryptionService.decrypt(connection.accessTokenEncrypted);
+  }
+
   private decryptToken(connection: ProviderConnection): string {
     return this.encryptionService.decrypt(connection.accessTokenEncrypted);
   }
@@ -53,7 +70,7 @@ export class JiraClientService implements ProviderClient {
     connection: ProviderConnection,
   ): Promise<ConnectionVerificationResult> {
     try {
-      const token = this.decryptToken(connection);
+      const token = await this.getValidToken(connection);
       const baseUrl = this.getBaseUrl(connection);
 
       const response = await axios.get<{
@@ -99,7 +116,7 @@ export class JiraClientService implements ProviderClient {
     const resources: ProviderResource[] = [];
 
     try {
-      const token = this.decryptToken(connection);
+      const token = await this.getValidToken(connection);
       const baseUrl = this.getBaseUrl(connection);
       const headers = this.buildHeaders(token);
 
@@ -305,7 +322,7 @@ export class JiraClientService implements ProviderClient {
   ): Promise<void> {
     this.logger.log(`Starting historical sync for Jira resource ${resource.externalResourceId}`);
 
-    const token = this.decryptToken(connection);
+    const token = await this.getValidToken(connection);
     const baseUrl = this.getBaseUrl(connection);
     const headers = this.buildHeaders(token);
 
