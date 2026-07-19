@@ -12,7 +12,7 @@ import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [ConfigModule],
-  controllers: [JiraAuthController],
+  controllers: [JiraAuthController, JiraEventsController],
   providers: [JiraClientService, JiraAdapterService, JiraWebhookValidator, JiraSyncService],
   exports: [JiraClientService, JiraAdapterService, JiraWebhookValidator, JiraSyncService],
 })

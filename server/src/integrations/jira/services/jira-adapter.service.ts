@@ -12,7 +12,9 @@ import {
 export class JiraAdapterService implements ProviderAdapter {
   normalizeEvent(input: ProviderEventInput): KnowledgeItem[] {
     const payload = input.rawPayload as Record<string, any>;
-    const eventType = input.providerEventType || payload.webhookEvent;
+    
+    // Support BOTH Webhook payloads (webhookEvent) AND direct API sync objects
+    const eventType = input.providerEventType || payload.webhookEvent || payload.type;
 
     if (!eventType || typeof eventType !== 'string') {
       return [];
@@ -20,19 +22,25 @@ export class JiraAdapterService implements ProviderAdapter {
 
     const items: KnowledgeItem[] = [];
 
-    // Issue Events
+    // Issue Events (From Webhooks or Historical Sync)
     if (
       eventType.includes('issue_created') ||
       eventType.includes('issue_updated') ||
-      eventType.includes('issue_deleted')
+      eventType.includes('issue_deleted') ||
+      eventType === 'jira_historical_issue'
     ) {
       if (payload.issue) {
         items.push(this.mapIssue(input, payload.issue, this.mapEventType(eventType)));
       }
 
-      // If issue updated includes a new comment, extract it
+      // Extract comments
       if (payload.comment && payload.issue) {
         items.push(this.mapComment(input, payload.issue, payload.comment, 'comment_created'));
+      } else if (payload.issue?.fields?.comment?.comments) {
+        // Handle historical sync comments embedded in the issue object
+        for (const comment of payload.issue.fields.comment.comments) {
+          items.push(this.mapComment(input, payload.issue, comment, 'comment_created'));
+        }
       }
     }
 
@@ -61,6 +69,9 @@ export class JiraAdapterService implements ProviderAdapter {
   }
 
   private mapEventType(raw: string): string {
+    if (raw === 'jira_historical_issue') {
+      return 'issue_synced';
+    }
     if (raw.startsWith('jira:')) {
       return raw.replace('jira:', '');
     }

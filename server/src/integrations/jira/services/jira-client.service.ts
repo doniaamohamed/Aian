@@ -31,6 +31,7 @@ export class JiraClientService implements ProviderClient {
     return {
       Authorization: `Bearer ${token}`,
       Accept: 'application/json',
+      'Content-Type': 'application/json',
     };
   }
 
@@ -39,6 +40,13 @@ export class JiraClientService implements ProviderClient {
       throw new Error('Jira connection is missing externalAccountId (cloudId)');
     }
     return `https://api.atlassian.com/ex/jira/${connection.externalAccountId}/rest/api/3`;
+  }
+
+  private getAgileBaseUrl(connection: ProviderConnection): string {
+    if (!connection.externalAccountId) {
+      throw new Error('Jira connection is missing externalAccountId (cloudId)');
+    }
+    return `https://api.atlassian.com/ex/jira/${connection.externalAccountId}/rest/agile/1.0`;
   }
 
   async verifyConnection(
@@ -121,7 +129,7 @@ export class JiraClientService implements ProviderClient {
       }
 
       // Fetch Boards
-      const agileBaseUrl = `https://api.atlassian.com/ex/jira/${connection.externalAccountId}/rest/agile/1.0`;
+      const agileBaseUrl = this.getAgileBaseUrl(connection);
 
       try {
         const boardsResponse = await axios.get<{
@@ -229,7 +237,6 @@ export class JiraClientService implements ProviderClient {
         tokenExpiresAt,
       };
 
-
       await this.providerConnectionRepo.update(connection.id, {
         accessTokenEncrypted: refreshed.accessTokenEncrypted,
         refreshTokenEncrypted: refreshed.refreshTokenEncrypted || null,
@@ -273,7 +280,7 @@ export class JiraClientService implements ProviderClient {
         refreshTokenEncrypted: null,
       });
 
-      await this.prisma.organizationEye.update({
+      await this.prisma.organizationEye.updateMany({
         where: { id: connection.organizationEyeId },
         data: { status: 'disconnected' },
       });
@@ -283,5 +290,99 @@ export class JiraClientService implements ProviderClient {
         error instanceof AxiosError ? error.response?.data : error,
       );
     }
+  }
+
+  /**
+   * Sync historical data for a Jira resource.
+   * Fetches issues via pagination and yields them back using the savePageCallback.
+   */
+  async syncHistoricalResource(
+    connection: ProviderConnection,
+    resource: any,
+    fromDate: Date,
+    cursor: string | undefined,
+    savePageCallback: (rawEvents: any[], nextCursor?: string) => Promise<void>,
+  ): Promise<void> {
+    this.logger.log(`Starting historical sync for Jira resource ${resource.externalResourceId}`);
+
+    const token = this.decryptToken(connection);
+    const baseUrl = this.getBaseUrl(connection);
+    const headers = this.buildHeaders(token);
+
+    // Jira primarily uses Offset Pagination. The cursor will just be the 'startAt' stringified integer.
+    let startAt = cursor ? parseInt(cursor, 10) : 0;
+    const maxResults = 50;
+    let hasMore = true;
+
+    // Use Jira's string format: 'YYYY-MM-DD HH:mm'
+    const updatedStr = fromDate.toISOString().replace('T', ' ').substring(0, 16);
+    
+    // Fallback: If it's a Board, we would hit the Agile API, but for historical backfill,
+    // we assume the resource is primarily an Issue container. For simplicity and robust fetching,
+    // we will rely on Project JQL first. If it's a board, the Agile API does not support standard JQL search directly.
+    const resourceId = resource.externalResourceId;
+    const jql = `project = ${resourceId} AND updated >= "${updatedStr}" ORDER BY updated ASC`;
+
+    while (hasMore) {
+      let response;
+      try {
+        response = await axios.post<{
+          issues: any[];
+          total: number;
+          maxResults: number;
+        }>(
+          `${baseUrl}/search`,
+          {
+            jql,
+            startAt,
+            maxResults,
+            expand: ['changelog', 'renderedFields'],
+          },
+          { headers },
+        );
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.status === 400) {
+          this.logger.debug(`Resource ${resourceId} is not a valid project JQL, attempting Board sync.`);
+          
+          const agileBaseUrl = this.getAgileBaseUrl(connection);
+          response = await axios.get<{
+            issues: any[];
+            total: number;
+            maxResults: number;
+          }>(`${agileBaseUrl}/board/${resourceId}/issue?startAt=${startAt}&maxResults=${maxResults}`, {
+            headers,
+          });
+        } else {
+          // It's a real error (401, 429, 500, etc)
+          throw err;
+        }
+      }
+
+      const issues = response.data.issues || [];
+      if (issues.length === 0) {
+        break; // No more issues
+      }
+
+      const rawEvents = issues.map(issue => ({
+        // We pass the raw issue directly. 
+        // The adapter must be updated to handle a raw issue without 'webhookEvent' wrapper.
+        type: 'jira_historical_issue',
+        issue,
+      }));
+
+      const total = response.data.total;
+      const nextStartAt = startAt + issues.length;
+      
+      hasMore = nextStartAt < total;
+      const nextCursor = hasMore ? nextStartAt.toString() : undefined;
+
+      // Yield the page to the global engine
+      await savePageCallback(rawEvents, nextCursor);
+
+      // Advance
+      startAt = nextStartAt;
+    }
+
+    this.logger.log(`Finished historical sync for Jira resource ${resource.externalResourceId}`);
   }
 }

@@ -8,10 +8,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { WebhookService } from '../../ingestion/collection/webhooks/webhook.service';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { WebhookService } from '../../../ingestion/collection/webhooks/webhook.service';
 
-@Controller('events')
+@Controller('integrations/jira')
 export class JiraEventsController {
   private readonly logger = new Logger(JiraEventsController.name);
 
@@ -20,7 +20,7 @@ export class JiraEventsController {
     private readonly webhookService: WebhookService,
   ) {}
 
-  @Post('jira')
+  @Post('events')
   @HttpCode(HttpStatus.OK)
   async handleEvent(@Req() req: RawBodyRequest<any>) {
     const jiraProvider = await this.prismaService.provider.findUnique({
