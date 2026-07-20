@@ -10,6 +10,7 @@ import { KnowledgeController } from './controllers/knowledge.controller';
 import { IntegrationsModule } from '../../integrations/integrations.module';
 import { MessagesService } from '../../integrations/messages/messages.service';
 
+import { GithubStatsController } from './controllers/github-stats.controller';
 @Module({
   imports: [IntegrationsModule], // Needs access to ProviderClientFactory
   providers: [MessagesService],
@@ -22,6 +23,7 @@ import { MessagesService } from '../../integrations/messages/messages.service';
     SettingsController,
     HistoricalSyncController,
     KnowledgeController,
+    GithubStatsController,
   ],
 })
 export class IngestionApiModule { }
