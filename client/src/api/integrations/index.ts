@@ -68,3 +68,17 @@ export const getHistoricalSyncStatus = async (provider: ProviderKey, connectionI
   const response = await api.get(`/eyes/${connectionId}/sync/historical/status`);
   return response.data;
 };
+
+// 5. Jira Specific - Site Selection
+export const getPendingSites = async (connectionId: string) => {
+  const response = await api.get(`/integrations/jira/pending-sites?connectionId=${connectionId}`);
+  return response.data;
+};
+
+export const selectJiraSite = async (connectionId: string, selectedCloudId: string) => {
+  const response = await api.post(`/integrations/jira/select-site`, {
+    providerConnectionId: connectionId,
+    selectedCloudId,
+  });
+  return response.data;
+};
