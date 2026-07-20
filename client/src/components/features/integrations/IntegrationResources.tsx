@@ -1,21 +1,32 @@
 "use client";
 
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
-import { Search, ArrowRight, Users, CheckCircle2, Hash, Lock } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, ArrowRight, Users, CheckCircle2, Hash, Lock, Loader2, AlertTriangle } from "lucide-react";
 import { ProviderHero } from "./components/ProviderHero";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getAvailableResources, getSelectedResources, saveSelectedResources, ProviderKey } from "@/api/integrations";
 import { useIntegrationsStore } from "@/store/integrations/integrations.store";
-import { useEffect } from "react";
 
-const ACT_TONE: Record<string, string> = {
-  high: "text-[color:var(--success)]",
-  medium: "text-[color:var(--gold-soft)]",
-  low: "text-muted-foreground",
+const PROVIDER_EYE_TYPE: Record<string, string> = {
+  github: "coding",
+  slack: "chat",
+  zoom: "meeting",
+  jira: "task",
 };
+
+type NormalizedResource = {
+  id: string;
+  name: string;
+  kind: "private" | "public";
+};
+// const ACT_TONE: Record<string, string> = {
+//   high: "text-[color:var(--success)]",
+//   medium: "text-[color:var(--gold-soft)]",
+//   low: "text-muted-foreground",
+// };
 
 export function IntegrationResources({ providerKey }: { providerKey: string }) {
   const { getProviderByKey, fetchIntegrations, isLoading } = useIntegrationsStore();
@@ -25,6 +36,8 @@ export function IntegrationResources({ providerKey }: { providerKey: string }) {
   const [availableResources, setAvailableResources] = useState<any[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   useEffect(() => {
     fetchIntegrations();
@@ -66,8 +79,17 @@ export function IntegrationResources({ providerKey }: { providerKey: string }) {
 
   const handleSave = async () => {
     if (connectionId) {
-      await saveSelectedResources(providerKey as ProviderKey, connectionId, Array.from(selected));
-      router.push(`/eyes/${providerKey}/sync-config`);
+      setIsSaving(true);
+      setSaveError(false);
+      try {
+        await saveSelectedResources(providerKey as ProviderKey, connectionId, Array.from(selected));
+        router.push(`/eyes/${providerKey}/sync-config`);
+      } catch (err) {
+        console.error("Failed to save resources", err);
+        setSaveError(true);
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -105,10 +127,12 @@ export function IntegrationResources({ providerKey }: { providerKey: string }) {
                   onClick={() => setSelected(new Set(availableResources.map((r) => r.externalResourceId || r.id)))}
                   className="rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.03] px-2.5 py-1.5 text-[11.5px] text-muted-foreground hover:text-foreground"
                 >
+
                   Select all
                 </button>
                 <button
                   onClick={() => setSelected(new Set())}
+                  disabled={isLoading || selected.size === 0}
                   className="rounded-lg border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.03] px-2.5 py-1.5 text-[11.5px] text-muted-foreground hover:text-foreground"
                 >
                   Clear
@@ -214,22 +238,37 @@ export function IntegrationResources({ providerKey }: { providerKey: string }) {
             <div className="mt-1 text-[12.5px] text-muted-foreground">
               {provider.resourceLabel.toLowerCase()} will feed this Eye.
             </div>
+            {saveError && (
+              <div className="mt-4 flex items-start gap-2 rounded-xl border border-[color:var(--danger)]/30 bg-[color:var(--danger)]/10 p-3">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[color:var(--danger)]" />
+                <span className="text-[11.5px] text-foreground">
+                  Couldn't save your selection. Please try again.
+                </span>
+              </div>
+            )}
 
-            <div className="my-5 h-px bg-black/10 dark:bg-white/10" />
 
-            <div className="space-y-3 text-[12.5px]">
-              <Row label="Estimated items" value={`${(selected.size * 4200).toLocaleString()}`} />
-              <Row label="Initial sync" value={`~${Math.max(1, Math.round(selected.size * 0.6))}m`} />
-              <Row label="Ongoing storage" value={`~${(selected.size * 0.4).toFixed(1)} GB`} />
-            </div>
+            {/* //             <div className="my-5 h-px bg-black/10 dark:bg-white/10" />
+
+  //             <div className="space-y-3 text-[12.5px]">
+  //               <Row label="Estimated items" value={`${(selected.size * 4200).toLocaleString()}`} />
+  //               <Row label="Initial sync" value={`~${Math.max(1, Math.round(selected.size * 0.6))}m`} />
+  //               <Row label="Ongoing storage" value={`~${(selected.size * 0.4).toFixed(1)} GB`} />
+  //             </div> */}
 
             <button
               onClick={handleSave}
               disabled={selected.size === 0 || !connectionId}
               className="btn-gold btn-gold-hover mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[13.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:transform-none text-[#17130A]"
             >
-              Configure sync <ArrowRight className="h-4 w-4" />
-            </button>
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  Configure sync <ArrowRight className="h-4 w-4" />
+                </>
+                )}
+             </button>
           </div>
 
           <div className="rounded-2xl border border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02] p-4 text-[12px] text-muted-foreground">
@@ -242,11 +281,16 @@ export function IntegrationResources({ providerKey }: { providerKey: string }) {
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium text-foreground">{value}</span>
-    </div>
-  );
-}
+
+function Row({ label, value }: { label: string; value: string }) { 
+return (
+  <div className="flex items-center justify-between">
+    <span className="text-muted-foreground">{label}</span>
+    <span className="font-medium text-foreground">{value}</span>
+  </div>
+);
+} 
+
+
+
+

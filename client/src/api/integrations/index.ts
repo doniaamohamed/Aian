@@ -2,6 +2,15 @@ import api from '../axios';
 
 export type ProviderKey = 'jira' | 'github' | 'slack' | 'zoom' | string;
 
+// eyeType values must match backend EyeType enum keys (lowercase, per DB seed)
+export type EyeType = 'chat' | 'meeting' | 'task' | 'coding';
+
+const PROVIDER_TO_EYE_TYPE: Record<ProviderKey, EyeType> = {
+  slack: 'chat',
+  zoom: 'meeting',
+  jira: 'task',
+  github: 'coding',
+};
 /**
  * Global endpoints that don't depend on a specific provider key
  */

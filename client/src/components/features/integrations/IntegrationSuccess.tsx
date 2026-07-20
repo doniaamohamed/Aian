@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { AnimatedEye } from "./components/AnimatedEye";
 import Link from "next/link";
 import { useIntegrationsStore } from "@/store/integrations/integrations.store";
@@ -12,6 +12,7 @@ export function IntegrationSuccess({ providerKey }: { providerKey: string }) {
   const { getProviderByKey, fetchIntegrations } = useIntegrationsStore();
   const provider = getProviderByKey(providerKey);
   const [resources, setResources] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchIntegrations();
@@ -21,13 +22,27 @@ export function IntegrationSuccess({ providerKey }: { providerKey: string }) {
 
   useEffect(() => {
     if (connectionId) {
+      setIsLoading(true);
       getAvailableResources(providerKey as ProviderKey, connectionId)
-        .then(setResources)
-        .catch(console.error);
+        .then((res) => {
+          setResources(res);
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          console.error(err);
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
     }
   }, [connectionId, providerKey]);
 
   if (!provider) return null;
+
+  const total = resources?.length ?? 0;
+  const privateCount =
+    resources?.filter((r: any) => r.isPrivate === true || r.metadata?.private === true).length ?? 0;
+  const publicCount = total - privateCount;
 
   return (
     <div className="w-full">
@@ -111,7 +126,7 @@ export function IntegrationSuccess({ providerKey }: { providerKey: string }) {
         </motion.div>
 
         {/* stats reveal */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 }}
@@ -127,6 +142,30 @@ export function IntegrationSuccess({ providerKey }: { providerKey: string }) {
               <div className="text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">{s.label}</div>
             </div>
           ))}
+        </motion.div> */}
+        {/* stats reveal — real data, no fabricated numbers */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+          className="glass mt-10 grid w-full max-w-lg grid-cols-3 gap-3 rounded-2xl p-4 bg-white dark:bg-transparent shadow-sm dark:shadow-none border border-black/5 dark:border-white/10"
+        >
+          {isLoading ? (
+            <div className="col-span-3 flex items-center justify-center py-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          ) : (
+            [
+              { label: `${provider.resourceLabel} detected`, value: `${total}` },
+              { label: "Private", value: `${privateCount}` },
+              { label: "Public", value: `${publicCount}` },
+            ].map((s) => (
+              <div key={s.label} className="text-center">
+                <div className="font-display text-[20px] font-semibold text-foreground">{s.value}</div>
+                <div className="text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">{s.label}</div>
+              </div>
+            ))
+          )}
         </motion.div>
       </div>
     </div>
