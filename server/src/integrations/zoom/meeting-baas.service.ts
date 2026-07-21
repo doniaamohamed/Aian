@@ -70,7 +70,7 @@ export class MeetingBaasService {
       });
 
       const bots = response.data.data || [];
-      console.log(response.data);
+      //console.log(response.data);
         return bots.map((bot: any) => ({
         externalResourceId: bot.bot_id,
         name: bot.bot_name || 'Meeting Assistant Bot',
@@ -157,7 +157,7 @@ export class MeetingBaasService {
             },
         },
         });
-        console.log(response.data)
+        //console.log(response.data)
       return response.data;
     } catch (error: any) {
       const errorMsg = error.response?.data?.message || error.message;

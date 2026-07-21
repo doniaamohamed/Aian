@@ -12,10 +12,11 @@ import type { RawBodyRequest } from "@nestjs/common";
 import { PrismaService } from "../../prisma/prisma.service";
 import { WebhookService } from "../../ingestion/collection/webhooks/webhook.service";
 import { MeetingBaasService } from "./meeting-baas.service";
-import { ProviderConnection } from "../contracts";
+import { ProviderConnection, ProviderEventInput } from "../contracts";
 import { ZoomClientService } from "./zoom-client.service";
 import axios from "axios";
 import * as crypto from 'crypto';
+import { ZoomAdapterService } from "./zoom-adapter.service";
 
 @Controller('events')
 export class ZoomEventsController {
@@ -24,7 +25,8 @@ export class ZoomEventsController {
         private readonly prismaService:PrismaService,
         private readonly webhookService:WebhookService,
         private readonly meetingBaasService:MeetingBaasService,
-        private readonly zoomClientService:ZoomClientService
+        private readonly zoomClientService:ZoomClientService,
+        private readonly zoomAdapterService:ZoomAdapterService
     ){}
 
     @Post('zoom')
@@ -59,7 +61,7 @@ export class ZoomEventsController {
         const connectionId=providerConnection?.id;
         this.logger.debug('connectionId:'+ connectionId)
         await this.webhookService.processWebhook(connectionId, req as any);
-        console.log(req.body)
+        //console.log(req.body)
         if (req.body.event == 'meeting.started') {
             try {
                 const meetingId = req.body.payload.object.id;
@@ -79,7 +81,7 @@ export class ZoomEventsController {
                     'Aian bot',
                 );
                 
-                console.log('Bot created successfully:', meetingBaasResponse);
+                //console.log('Bot created successfully:', meetingBaasResponse);
             } catch (error: any) {
                 this.logger.error(`Failed to trigger MeetingBaas Bot: ${error.message}`);
             }
@@ -194,24 +196,53 @@ export class ZoomEventsController {
                 }
             }
 
+            const participants = (eventData.participants || []).map((p: any) => ({
+                name: p.name || undefined,
+                externalId: p.id ? String(p.id) : undefined,
+                ...(p.email && { email: p.email }),
+            }));
+
             const meetingResultObject = {
                 botId: botId,
                 connectionId: connectionId,
                 durationSeconds: eventData.duration_seconds,
                 joinedAt: eventData.joined_at,
                 exitedAt: eventData.exited_at,
-                participants: eventData.participants || [], 
+                participants, 
                 speakers: eventData.speakers || [],      
                 transcriptionText,
                 summarization,
                 full_transcription,
                 videoUrl: eventData.video,
-                audioUrl: eventData.audio
+                audioUrl: eventData.audio,
+                externalAccountId:providerConnection?.externalAccountId,
+                externalAccountName:providerConnection?.externalAccountName,
             };
 
             this.logger.log('--- Meeting Data Object Successfully Compiled ---');
-            console.log(meetingResultObject);
+
+            const organizationEye = await this.prismaService.organizationEye.findFirst({
+                where:{id:providerConnection?.organizationEyeId}
+            })
+
+            if(!organizationEye?.id)
+                throw new NotFoundException('organization eye not found');
+            //console.log(meetingResultObject);
+            const eventInput: ProviderEventInput = {
+                rawPayload: meetingResultObject,
+                rawEventReference: botId, 
+                organizationId: organizationEye?.id,
+                connectionId: connectionId,
+                providerEventType: eventType,
+            };
+
+            const knowledgeItems = this.zoomAdapterService.normalizeEvent(eventInput);
+
+            //console.log('knowledge Item: ',knowledgeItems)
             }
+
+            
+            
             return { received: true };
 
         } catch (error: any) {
