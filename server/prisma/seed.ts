@@ -367,7 +367,7 @@ async function main() {
       data: {
         id: targetOwnerId,
         fullName: 'Amir Alsayed',
-        email: 'amir.alsayed@example.com',
+        email: 'amyralsyd367@gmail.com',
         passwordHash: realHash,
         status: 'active',
         roleId: ownerRole.id,
