@@ -429,7 +429,7 @@ export class BillingService {
   private async handleSuccessfulPayment(payment: {
     id: string;
     organizationId: string;
-    subscriptionId: string;
+    subscriptionId: string | null;
     billingCycle: string;
     type: string;
     metadata: any;
@@ -448,7 +448,7 @@ export class BillingService {
     if (payment.type === 'upgrade_proration') {
       // Apply upgrade immediately — change plan, keep billing period
       const targetPlanId = metadata.targetPlanId;
-      if (targetPlanId) {
+      if (targetPlanId && payment.subscriptionId) {
         await this.repository.updateSubscriptionStatus(
           payment.subscriptionId,
           'active',
@@ -473,20 +473,22 @@ export class BillingService {
         periodEnd.setMonth(periodEnd.getMonth() + 1);
       }
 
-      await this.repository.updateSubscriptionStatus(
-        payment.subscriptionId,
-        'active',
-        {
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-        },
-      );
+      if (payment.subscriptionId) {
+        await this.repository.updateSubscriptionStatus(
+          payment.subscriptionId,
+          'active',
+          {
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+          },
+        );
 
-      // Clear grace period if any
-      await this.repository.clearGracePeriod(payment.subscriptionId);
+        // Clear grace period if any
+        await this.repository.clearGracePeriod(payment.subscriptionId);
+      }
 
       this.logger.log(
-        `Payment successful — Subscription ${payment.subscriptionId} activated until ${periodEnd.toISOString()}`,
+        `Payment successful — Subscription ${payment.subscriptionId ?? 'N/A'} activated until ${periodEnd.toISOString()}`,
       );
     }
 
@@ -502,12 +504,12 @@ export class BillingService {
   private async handleFailedPayment(payment: {
     id: string;
     organizationId: string;
-    subscriptionId: string;
+    subscriptionId: string | null;
     type: string;
   }) {
     if (payment.type === 'upgrade_proration') {
       this.logger.warn(
-        `Upgrade payment failed — Payment: ${payment.id}. Subscription ${payment.subscriptionId} remains on current plan without changes.`,
+        `Upgrade payment failed — Payment: ${payment.id}. Subscription ${payment.subscriptionId ?? 'N/A'} remains on current plan without changes.`,
       );
       
       await this.repository.createLedgerEvent({
@@ -523,10 +525,12 @@ export class BillingService {
     const gracePeriodEnd = new Date();
     gracePeriodEnd.setDate(gracePeriodEnd.getDate() + GRACE_PERIOD_DAYS);
 
-    await this.repository.setGracePeriod(
-      payment.subscriptionId,
-      gracePeriodEnd,
-    );
+    if (payment.subscriptionId) {
+      await this.repository.setGracePeriod(
+        payment.subscriptionId,
+        gracePeriodEnd,
+      );
+    }
 
     await this.repository.createLedgerEvent({
       organizationId: payment.organizationId,
@@ -536,7 +540,7 @@ export class BillingService {
     });
 
     this.logger.log(
-      `Payment failed — Subscription ${payment.subscriptionId} entered grace period until ${gracePeriodEnd.toISOString()}`,
+      `Payment failed — Subscription ${payment.subscriptionId ?? 'N/A'} entered grace period until ${gracePeriodEnd.toISOString()}`,
     );
   }
 
@@ -556,7 +560,7 @@ export class BillingService {
       status: payment.status,
       paymentId: payment.id,
       subscriptionId: payment.subscriptionId,
-      planName: payment.subscription.plan.name,
+      planName: payment.subscription?.plan?.name ?? 'N/A',
       billingCycle: payment.billingCycle,
       amountCents: payment.amountCents,
       currency: payment.currency,
@@ -619,5 +623,66 @@ export class BillingService {
     );
 
     return { success: true, data: updatedSub };
+  }
+
+  // ─── Transactions ──────────────────────────────────────────────────────────
+
+  async getTransactionsLogs(
+    organizationId: string,
+    filters: { fromDate?: string; toDate?: string; status?: string; type?: string },
+    pagination: { page?: number; limit?: number },
+    sort: { sortBy?: string; sortOrder?: 'asc' | 'desc' }
+  ) {
+    const result = await this.repository.getTransactionsLogs(
+      organizationId,
+      filters,
+      pagination,
+      sort
+    );
+
+    return { success: true, data: result };
+  }
+
+  async getTransactionsSummary(
+    organizationId: string,
+    filters: { fromDate?: string; toDate?: string }
+  ) {
+    const aggregations = await this.repository.getTransactionsSummary(
+      organizationId,
+      filters
+    );
+
+    let totalPayments = 0;
+    let totalSuccessfulAmount = 0;
+    let totalFailedCount = 0;
+    let totalPendingCount = 0;
+    let totalSuccessfulCount = 0;
+
+    for (const agg of aggregations) {
+      const count = agg._count.id;
+      const amount = agg._sum.amountCents || 0;
+      
+      totalPayments += count;
+
+      if (agg.status === 'paid') {
+        totalSuccessfulAmount += amount;
+        totalSuccessfulCount += count;
+      } else if (agg.status === 'failed') {
+        totalFailedCount += count;
+      } else if (agg.status === 'pending') {
+        totalPendingCount += count;
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        totalPayments,
+        totalSuccessfulAmount,
+        totalSuccessfulCount,
+        totalFailedCount,
+        totalPendingCount,
+      }
+    };
   }
 }
