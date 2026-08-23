@@ -29,9 +29,13 @@ export class AiGatewayModule implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.providerFactory.register(this.bedrockProvider, true);
-
     // Register GeminiProvider as the default provider for the entire system
-    this.providerFactory.register(this.geminiProvider, false);
+    // gemini as default provider
+    this.providerFactory.register(this.bedrockProvider, false);
+    this.providerFactory.register(this.geminiProvider, true);
+
+    // bedrok as default provider
+    // this.providerFactory.register(this.bedrockProvider, true);
+    // this.providerFactory.register(this.geminiProvider, false);
   }
 }
