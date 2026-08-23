@@ -17,29 +17,32 @@ const displayFont = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "AIAN — Your Company's Brain. Organizational Intelligence Platform.",
+  title: "AIAN | The Enterprise Knowledge Graph",
   description:
-    "AIAN transforms every meeting, message, document, ticket and repository into one intelligent organizational memory your team can search, understand and grow from.",
+    "Stop losing company knowledge. AIAN transforms every meeting, message, document, and ticket into one intelligent organizational memory.",
   authors: [{ name: "AIAN" }],
+  metadataBase: new URL("https://aiaan.tech"),
   openGraph: {
-    title: "AIAN — Your Company's Brain. Organizational Intelligence Platform.",
+    title: "AIAN | The Enterprise Knowledge Graph",
     description:
-      "The enterprise organizational intelligence platform. One brain for every meeting, message, doc, ticket and repo.",
+      "Stop losing company knowledge. AIAN transforms every meeting, message, document, and ticket into one intelligent organizational memory.",
+    url: "https://aiaan.tech",
+    siteName: "AIAN",
     type: "website",
+    locale: "en_US",
     images: [
       {
-        url: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9328c64a-4ae4-45fb-a387-c3adb56b1c96/id-preview-ea9b12c3--c1e400e4-de77-497a-ba91-fa85b83ba395.lovable.app-1783078500618.png",
+        url: "/assets/email/aian-logo.png",
+        alt: "AIAN Enterprise Knowledge Graph Preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AIAN — Your Company's Brain. Organizational Intelligence Platform.",
+    title: "AIAN | The Enterprise Knowledge Graph",
     description:
-      "Enterprise organizational intelligence. One brain for the modern company.",
-    images: [
-      "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9328c64a-4ae4-45fb-a387-c3adb56b1c96/id-preview-ea9b12c3--c1e400e4-de77-497a-ba91-fa85b83ba395.lovable.app-1783078500618.png",
-    ],
+      "Stop losing company knowledge. AIAN transforms every meeting, message, document, and ticket into one intelligent organizational memory.",
+    images: ["/assets/email/aian-logo.png"],
   },
 };
 
